@@ -1,6 +1,6 @@
 This repo contains the code and data for our paper: 
 
-**Describing Differences between Text Distributions with Natural Language**
+**Summarizing Differences between Text Distributions with Natural Language**
 
 Ruiqi Zhong, Charlie Snell, Dan Klein, Jacob Steinhardt
 
