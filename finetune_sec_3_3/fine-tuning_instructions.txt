@@ -1,2 +1,2 @@
-Proposer: we fine-tuned GPT-3 Davinci using proposer_finetune.json with hyperparameters Epoch=1, bsize=20, and learning rate 0.05. 
+Proposer: we fine-tuned GPT-3 Davinci using proposer_finetune.json with hyperparameters Epoch=1, bsize=20, and learning rate 0.05. Retrospectively, I made some error repeating two of the hypotheses twice, but this is the exact same file I used to fine-tune GPT-3, and it is unlikely that those two datapoints will change the result.
 Verifier: we fine-tuned UnifiedQA with 250 steps, batch size 32, learning rate 5e-5, and scheduled learning rate warmup. We fine-tuned on the training split of verifier_finetune.json and early stopped on the rest.
