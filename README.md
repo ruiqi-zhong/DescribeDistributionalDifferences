@@ -12,4 +12,6 @@ Ruiqi Zhong, Charlie Snell, Dan Klein, Jacob Steinhardt
 
 ```benchmark_sec_4``` contains the 54 binary classification tasks we used to benchmark our system and our manual evaluation of the descriptions by the system. See load_benchmark.py and table_1.py for more detail.
 
+We are continue improving our system. ```system_v05-14-22``` contains the implementation as of 05/14/2022. It is different from the one used in our paper, we have not evaluated it yet, and it might potentially be a weaker system. However, the new proposer is based on T5 instead of GPT-3, so you can access the model weights and run it locally. 
+
 If you have any questions, feel free to email me at ruiqi-zhong@berkeley.edu!
