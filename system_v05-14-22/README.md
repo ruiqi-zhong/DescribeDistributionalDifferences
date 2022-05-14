@@ -1,6 +1,6 @@
 Written by Ruiqi Zhong, on 05/14/2022
 
-### Overview: 
+### Overview
 
 This folder contains an "end2end" implementation of the our paper: "[Describing Differences between Text Distributions with Natural Language](https://arxiv.org/abs/2201.12323)." We call it **D3** for short (**D**escribe **D**istributional **D**ifferences). Notice that this implementation is different from that in the paper, so the performance is not directly comparable (especially because we replaced the GPT-3 proposer with a T5 model, which can be open-sourced). However, we found the system to perform reasonably well.
 
@@ -32,7 +32,7 @@ Representative samples: implemented in ```get_extreme_w_highlight.py``` . The im
 
 #### Part 2
 
-Proposer: implemented in ```proposer_wrapper.py``` . We provide two options a) using GPT-3 --- unfortunately we cannot directly share our fine-tuned proposer with you, so you need to fine-tune GPT-3 on your own using OpenAI's API. To make it more convenient for other researchers, we also implemented b) a proposer based on T5; this model is fine-tuned on our task-specific dataset and the instruction following dataset from [AI2 natural instruction v2.0 dataset](https://instructions.apps.allenai.org), and we also implemented an approach that ensembles the logits that uses input prompts with samples. 
+Proposer: implemented in ```proposer_wrapper.py``` . We provide two options a) using GPT-3 --- unfortunately we cannot directly share our fine-tuned proposer with you, so you need to fine-tune GPT-3 on your own using OpenAI's API. To make it more convenient for other researchers, we also implemented b) a proposer based on T5; this model is fine-tuned on our task-specific dataset and the instruction following dataset from [AI2 natural instruction v2.0 dataset](https://instructions.apps.allenai.org), and we also implemented an approach that ensembles the logits that uses input prompts with different samples. 
 
 Finally, we noticed that we made some stupid errors that added noise to the fine-tuning data, and we fixed them when fine-tuning this version (so the performance could have been higher in our paper). 
 
@@ -40,4 +40,4 @@ We thank Dong Yang for fine-tuning the proposer.
 
 #### Part 3
 
-Verifier: implemented in ```proposer_wrapper.py``` . The implementation is mostly consistent with the one describe in our paper. Again, we noticed that we made some stupid errors that added noise to the fine-tuning data, and we fixed them when fine-tuning this version.
+Verifier: implemented in ```verifier_wrapper.py``` . The implementation is mostly consistent with the one describe in our paper. Again, we noticed that we made some stupid errors that added noise to the fine-tuning data, and we fixed them when fine-tuning this version.
