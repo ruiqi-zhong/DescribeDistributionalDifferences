@@ -20,7 +20,11 @@ We ran the system with a single A100 with 80GB memory. If you are working with s
 
 ### Example Usage
 
-Run ```python3 end2end_d3.py``` to describe the differences between pairs of text distributions from our benchmark.
+Run ```python3 end2end_d3.py``` to describe the differences between pairs of text distributions from our benchmark. The core function is ```describe```, with the signature:
+
+```describe(pos: List[str], neg: List[str]) -> Dict[str, float]```
+
+It takes in two lists of strings corresponding to the samples from each distribution and returns a dictionary that maps each description to our score that approximates how well it can describe the differences. 
 
 ### Example Predictions
 
