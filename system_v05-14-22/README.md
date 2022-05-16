@@ -22,6 +22,10 @@ We ran the system with a single A100 with 80GB memory. If you are working with s
 
 Run ```python3 end2end_d3.py``` to describe the differences between pairs of text distributions from our benchmark.
 
+### Example Predictions
+
+Run ```python3 examine_predictions_on_benchmark.py``` to examine example predictions on our benchmark. Change the value of the ```TOP_K``` variable to vary the number of descriptions you want to examine per distribution pairs.  
+
 ### Sketch of the System
 
 Our system has 3 parts. 1) scoring samples according to how well it represents the difference between the two distributions, 2) propose hypotheses, and 3) verify hypotheses.
