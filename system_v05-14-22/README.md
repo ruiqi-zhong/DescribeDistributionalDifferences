@@ -12,7 +12,7 @@ Finally, the code is pretty messy right now and I will probably polish it the ne
 
 ### Environment
 
-Run ```conda env create -f  d3_0514.yaml``` to set up the environment. Then replace the transformers package source file ```transformers/generation_utils.py``` with the ```generation_utils.py``` file with the one in this folder (where we implemented the ensemble_sampling). 
+Run ```conda env create -f  d3_0514.yaml``` to set up the environment. Then replace the transformers package source file ```transformers/generation_utils.py``` with the ```generation_utils.py``` file with the one in this folder (where we implemented the ensemble_sampling). You can find where transformers is installed with the command: ```python3 -c "import transformers; print(transformers.__file__)"```
 
 ### Hardware
 
