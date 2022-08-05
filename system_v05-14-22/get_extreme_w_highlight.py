@@ -198,11 +198,13 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
         all_logits, all_highlights = [], []
         cur_start = 0
         explainer = shap.Explainer(predict, tokenizer)
-
+        print(cur_start, len(texts))
         while cur_start < len(texts):
             texts_ = texts[cur_start:cur_start + bsize]
             shap_values = explainer(texts_)
             print(shap_values)
+            cur_start += bsize
+
 
 
 def train_and_eval(cv_dict, use_shap):
