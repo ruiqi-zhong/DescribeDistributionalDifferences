@@ -48,5 +48,5 @@ if __name__ == "__main__":
         try:
             get_rep(pos=d0, neg=d1, pair="shap-" + str(i))
         except Exception as e:
-            print(e)
+            print("error: ", e)
             continue
