@@ -191,7 +191,7 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
             # tv = torch.tensor(
             #     [tokenizer.encode(v, padding=True, max_length=max_length, truncation=True) for v in x]
             # ).to(device)
-            outputs = model(**inputs)
+            outputs = model(**inputs)["highlight"].detatch().cpu().numpy()
             # [0].detach().cpu().numpy()
             print("outsputs: ", outputs)
             
@@ -229,7 +229,7 @@ def train_and_eval(cv_dict, use_shap):
 
 def eval_only(pos, neg, use_shap):
     print("eval_only")
-    model = RoBERTaSeqAttn().to(device)
+    model = RoBERTaSeq().to(device)
     tokenizer = AutoTokenizer.from_pretrained(pretrain_model)
     for fold_idx, cv_dict in enumerate(cv(pos, neg, NUM_FOLD)):
         pos_eval_dict = evaluate(cv_dict['test_pos'], use_shap, model, tokenizer)
