@@ -218,6 +218,14 @@ def train_and_eval(cv_dict, use_shap):
         'test_neg_highlight': neg_highlights 
     }
 
+def eval_only(pos, neg, use_shap):
+    model = RoBERTaSeqAttn().to(device)
+    tokenizer = AutoTokenizer.from_pretrained(pretrain_model)
+    for fold_idx, cv_dict in enumerate(cv(pos, neg, NUM_FOLD)):
+        pos_eval_dict = evaluate(cv_dict['test_pos'], use_shap, model, tokenizer)
+
+    return
+
 
 
 def return_extreme_values(pos, neg, train: bool):
