@@ -188,11 +188,13 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
         print("use shap")
         def predict(x):
             inputs = tokenizer(texts_, return_tensors='pt', truncation=True, max_length=max_length, padding=True).to(device)
-            print("inputs: ", inputs)
             # tv = torch.tensor(
             #     [tokenizer.encode(v, padding=True, max_length=max_length, truncation=True) for v in x]
             # ).to(device)
-            outputs = model(**inputs)[0].detach().cpu().numpy()
+            outputs = model(**inputs)
+            # [0].detach().cpu().numpy()
+            print("outsputs: ", outputs)
+            
             scores = (np.exp(outputs).T / np.exp(outputs).sum(-1)).T
             val = sp.special.logit(scores[:,1]) # use one vs rest logit units
             print("val: ", val)
