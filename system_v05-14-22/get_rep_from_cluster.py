@@ -46,6 +46,6 @@ if __name__ == "__main__":
 
         d0, d1 = clusters[d0_index], clusters[d1_index]
         try:
-            get_rep(pos=d0, neg=d1, pair="roberta-attention-" + str(i))
+            get_rep(pos=d0, neg=d1, pair="shap-" + str(i))
         except:
             continue
