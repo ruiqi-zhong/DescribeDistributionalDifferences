@@ -188,7 +188,7 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
         print("use shap")
         def predict(x):
             tv = torch.tensor(
-                [tokenizer(v, padding=True, max_length=max_length, truncation=True) for v in x]
+                [tokenizer.encode(v, padding=True, max_length=max_length, truncation=True) for v in x]
             ).to(device)
             outputs = model(tv)[0].detach().cpu().numpy()
             scores = (np.exp(outputs).T / np.exp(outputs).sum(-1)).T
