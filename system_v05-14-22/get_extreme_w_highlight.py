@@ -187,10 +187,12 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
     else:
         print("use shap")
         def predict(x):
-            tv = torch.tensor(
-                [tokenizer.encode(v, padding=True, max_length=max_length, truncation=True) for v in x]
-            ).to(device)
-            outputs = model(tv)[0].detach().cpu().numpy()
+            inputs = tokenizer(texts_, return_tensors='pt', truncation=True, max_length=max_length, padding=True).to(device)
+
+            # tv = torch.tensor(
+            #     [tokenizer.encode(v, padding=True, max_length=max_length, truncation=True) for v in x]
+            # ).to(device)
+            outputs = model(**inputs)[0].detach().cpu().numpy()
             scores = (np.exp(outputs).T / np.exp(outputs).sum(-1)).T
             val = sp.special.logit(scores[:,1]) # use one vs rest logit units
             return val
@@ -200,7 +202,6 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
         explainer = shap.Explainer(predict, tokenizer)
         print(cur_start, len(texts))
         while cur_start < len(texts):
-            print("iteration: ")
             texts_ = texts[cur_start:cur_start + bsize]
             shap_values = explainer(texts_)
             shap.plots.text(shap_values)
