@@ -203,6 +203,8 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
             print("iteration: ")
             texts_ = texts[cur_start:cur_start + bsize]
             shap_values = explainer(texts_)
+            shap.plots.text(shap_values)
+
             print(shap_values)
             cur_start += bsize
 
