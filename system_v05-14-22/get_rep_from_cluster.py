@@ -25,11 +25,11 @@ def get_rep(
         print("Folder %s exists" % save_folder)
 
     # get samples that are representative of the differences between two distributions
-    # eval_only(pos, neg, True)
-    extreme_vals = return_extreme_values(pos, neg, False)
-    pkl.dump(
-        extreme_vals, open(os.path.join(save_folder, "get_extreme_result.pkl"), "wb")
-    )
+    eval_only(pos, neg, True)
+    # extreme_vals = return_extreme_values(pos, neg, False)
+    # pkl.dump(
+    #     extreme_vals, open(os.path.join(save_folder, "get_extreme_result.pkl"), "wb")
+    # )
 
 
 if __name__ == "__main__":
