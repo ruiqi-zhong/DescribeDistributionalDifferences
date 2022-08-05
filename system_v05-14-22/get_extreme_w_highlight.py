@@ -185,6 +185,7 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
             'highlights': highlights
         }
     else:
+        print("use shap")
         def predict(x):
             tv = torch.tensor(
                 [tokenizer(v, padding=True, max_length=max_length, truncation=True).to(device) for v in x]
@@ -219,6 +220,7 @@ def train_and_eval(cv_dict, use_shap):
     }
 
 def eval_only(pos, neg, use_shap):
+    print("eval_only")
     model = RoBERTaSeqAttn().to(device)
     tokenizer = AutoTokenizer.from_pretrained(pretrain_model)
     for fold_idx, cv_dict in enumerate(cv(pos, neg, NUM_FOLD)):
