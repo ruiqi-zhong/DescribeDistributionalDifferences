@@ -200,6 +200,7 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
         explainer = shap.Explainer(predict, tokenizer)
         print(cur_start, len(texts))
         while cur_start < len(texts):
+            print("iteration: ")
             texts_ = texts[cur_start:cur_start + bsize]
             shap_values = explainer(texts_)
             print(shap_values)
