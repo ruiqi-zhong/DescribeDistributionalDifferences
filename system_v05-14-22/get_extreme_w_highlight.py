@@ -206,7 +206,7 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
             shap_values = explainer(texts_)
             shap.plots.text(shap_values)
 
-            print(shap_values)
+            print("shap_values: ", shap_values)
             cur_start += bsize
 
 
