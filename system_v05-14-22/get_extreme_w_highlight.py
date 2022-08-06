@@ -231,7 +231,7 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
             # ).cpu()
             print(type(x))
             inputs = tokenizer(
-                x,
+                x.tolist(),
                 return_tensors="pt",
                 truncation=True,
                 max_length=max_length,
