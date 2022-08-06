@@ -245,10 +245,12 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
             logits = lsm(model_output_dict["logits"].detach().cpu()).numpy().tolist()
             print("logits: ", logits)
 
-            # scores = (np.exp(logits).T / np.exp(logits).sum(-1)).T
-            # print(scores)
+            scores = (np.exp(logits).T / np.exp(logits).sum(-1)).T
+            print("scores: ", scores)
             val = sp.special.logit(logits)  # use one vs rest logit units
             print("val: ", val)
+            print(len(val))
+            print(len(x[0]))
             return val
 
         all_logits, all_highlights = [], []
