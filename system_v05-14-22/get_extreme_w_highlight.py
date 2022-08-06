@@ -281,7 +281,10 @@ def train_and_eval(cv_dict, use_shap):
 def eval_only(pos, neg, use_shap):
     print("eval_only")
     model = RoBERTaSeq().to(device)
-    tokenizer = AutoTokenizer.from_pretrained(pretrain_model)
+    tokenizer = AutoTokenizer.from_pretrained(
+        pretrain_model,
+        add_prefix_space=True,
+    )
     for fold_idx, cv_dict in enumerate(cv(pos, neg, NUM_FOLD)):
         pos_eval_dict = evaluate(cv_dict["test_pos"], use_shap, model, tokenizer)
 
