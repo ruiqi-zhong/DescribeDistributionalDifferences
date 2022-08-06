@@ -187,11 +187,11 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
     else:
         print("use shap")
         def predict(x):
-            inputs = tokenizer(texts_, return_tensors='pt', truncation=True, max_length=max_length, padding=True).to(device)
-            # tv = torch.tensor(
-            #     [tokenizer.encode(v, padding=True, max_length=max_length, truncation=True) for v in x]
-            # ).to(device)
-            outputs = model(**inputs)["highlight"]
+            # inputs = tokenizer(texts_, return_tensors='pt', truncation=True, max_length=max_length, padding=True).to(device)
+            tv = torch.tensor(
+                [tokenizer.encode(v, padding=True, max_length=max_length, truncation=True) for v in x]
+            ).to(device)
+            outputs = model(**tv)["highlight"]
             # [0].detach().cpu().numpy()
             
             scores = [(np.exp(o).T / np.exp(o).sum(-1)).T for o in outputs]
