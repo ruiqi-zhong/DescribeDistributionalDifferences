@@ -219,7 +219,7 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
         print("use shap")
 
         def predict(x):
-            print("x: ", x)
+            # print("x: ", x)
             # print("texts_ length: ", len(texts_))
             # inputs = torch.tensor(
             #     [
