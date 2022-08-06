@@ -243,11 +243,11 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
             # print("inputs: ", inputs)
             model_output_dict = model(**inputs)
             logits = lsm(model_output_dict["logits"].detach().cpu()).numpy().tolist()
-            print("outputs: ", logits)
+            print("logits: ", logits)
 
-            scores = (np.exp(logits).T / np.exp(logits).sum(-1)).T
-            print(scores)
-            val = sp.special.logit(scores)  # use one vs rest logit units
+            # scores = (np.exp(logits).T / np.exp(logits).sum(-1)).T
+            # print(scores)
+            val = sp.special.logit(logits)  # use one vs rest logit units
             print("val: ", val)
             return val
 
