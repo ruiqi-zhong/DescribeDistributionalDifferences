@@ -193,8 +193,7 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
                 return_tensors='pt', 
                 truncation=True, 
                 max_length=max_length, 
-                padding=True,
-                is_split_into_words=True).to(device)
+                padding=True).to(device)
 
             print(inputs)
             # print("inputs: ", inputs)
@@ -215,7 +214,7 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
             texts_ = texts[cur_start:cur_start + bsize]
             print("texts_ in while loop: ", texts_)
             print("texts_ length: ", len(texts_))
-            
+             
             shap_values = explainer(texts_)
             # shap.plots.text(shap_values)
 
@@ -241,7 +240,7 @@ def train_and_eval(cv_dict, use_shap):
 def eval_only(pos, neg, use_shap):
     print("eval_only")
     model = RoBERTaSeq().to(device)
-    tokenizer = AutoTokenizer.from_pretrained(pretrain_model, add_prefix_space=True)
+    tokenizer = AutoTokenizer.from_pretrained(pretrain_model)
     for fold_idx, cv_dict in enumerate(cv(pos, neg, NUM_FOLD)):
         pos_eval_dict = evaluate(cv_dict['test_pos'], use_shap, model, tokenizer)
 
