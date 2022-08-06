@@ -194,12 +194,15 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
                 max_length=max_length, 
                 padding=True,
                 is_split_into_words=True).to(device)
+
+            tv = torch.tensor([tokenizer.encode(v, padding='max_length', max_length=500, truncation=True) for v in texts_]).cuda()
+
             print(inputs)
+            print("tv: ", tv)
             # print("inputs: ", inputs)
             model_output_dict = model(**inputs)
             logits = lsm(model_output_dict['logits'].detach().cpu()).numpy().tolist()
             print("outputs: ", logits)
-            # [0].detach().cpu().numpy()
             
             scores = (np.exp(logits).T / np.exp(logits).sum(-1)).T
             print(scores)
