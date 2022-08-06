@@ -212,6 +212,7 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
         explainer = shap.Explainer(predict, tokenizer)
         while cur_start < len(texts):
             texts_ = texts[cur_start:cur_start + bsize]
+            print("texts_ in while loop: ", texts_)
             shap_values = explainer(texts_)
             # shap.plots.text(shap_values)
 
