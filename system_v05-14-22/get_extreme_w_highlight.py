@@ -189,7 +189,7 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
         def predict(texts_):
             print("texts_: ", texts_)
             print("texts_ length: ", len(texts_))
-            inputs = tokenizer(texts_, 
+            inputs = tokenizer.encode(texts_, 
                 return_tensors='pt', 
                 truncation=True, 
                 max_length=max_length, 
