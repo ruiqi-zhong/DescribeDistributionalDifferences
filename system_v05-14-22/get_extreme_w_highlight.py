@@ -194,6 +194,7 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
                 padding=True,
                 is_split_into_words=True).to(device)
             # print("inputs: ", inputs)
+            model_output_dict = model(**inputs)
             logits = lsm(model_output_dict['logits'].detach().cpu()).numpy().tolist()
             print("outputs: ", logits)
             # [0].detach().cpu().numpy()
