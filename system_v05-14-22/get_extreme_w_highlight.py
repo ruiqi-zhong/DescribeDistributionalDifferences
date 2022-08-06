@@ -195,8 +195,8 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
             # [0].detach().cpu().numpy()
             print("outsputs: ", outputs)
             
-            scores = (np.exp(outputs).T / np.exp(outputs).sum(-1)).T
-            val = sp.special.logit(scores[:,1]) # use one vs rest logit units
+            scores = [(np.exp(o).T / np.exp(o).sum(-1)).T for o in outputs]
+            val = [sp.special.logit(s[:,1]) for s in scores] # use one vs rest logit units
             print("val: ", val)
             return val
         
