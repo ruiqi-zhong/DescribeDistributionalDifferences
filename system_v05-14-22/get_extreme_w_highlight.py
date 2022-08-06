@@ -221,22 +221,22 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
         def predict(x):
             print("x: ", x)
             # print("texts_ length: ", len(texts_))
-            inputs = torch.tensor(
-                [
-                    tokenizer.encode(
-                        v, padding="max_length", max_length=500, truncation=True
-                    )
-                    for v in x
-                ]
-            ).cpu()
-            # inputs = tokenizer(
-            #     x,
-            #     return_tensors="pt",
-            #     truncation=True,
-            #     max_length=max_length,
-            #     is_split_into_words=True,
-            #     padding=True,
-            # ).to(device)
+            # inputs = torch.tensor(
+            #     [
+            #         tokenizer.encode(
+            #             v, padding="max_length", max_length=500, truncation=True
+            #         )
+            #         for v in x
+            #     ]
+            # ).cpu()
+            inputs = tokenizer(
+                x,
+                return_tensors="pt",
+                truncation=True,
+                max_length=max_length,
+                is_split_into_words=True,
+                padding=True,
+            ).to(device)
 
             print(inputs)
             # print("inputs: ", inputs)
