@@ -186,36 +186,35 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
         }
     else:
         print("use shap")
-        # def predict(texts_):
-        #     print("texts_: ", texts_)
-        #     inputs = tokenizer(texts_, 
-        #         return_tensors='pt', 
-        #         truncation=True, 
-        #         max_length=max_length, 
-        #         padding=True,
-        #         is_split_into_words=True).to(device)
+        def predict(texts_):
+            print("texts_: ", texts_)
+            print("texts_ length: ", len(texts_))
+            inputs = tokenizer(texts_, 
+                return_tensors='pt', 
+                truncation=True, 
+                max_length=max_length, 
+                padding=True,
+                is_split_into_words=True).to(device)
 
-        #     tv = torch.tensor([tokenizer.encode(v, padding='max_length', max_length=500, truncation=True) for v in texts_]).cuda()
-
-        #     print(inputs)
-        #     print("tv: ", tv)
-        #     # print("inputs: ", inputs)
-        #     model_output_dict = model(**inputs)
-        #     logits = lsm(model_output_dict['logits'].detach().cpu()).numpy().tolist()
-        #     print("outputs: ", logits)
+            print(inputs)
+            # print("inputs: ", inputs)
+            model_output_dict = model(**inputs)
+            logits = lsm(model_output_dict['logits'].detach().cpu()).numpy().tolist()
+            print("outputs: ", logits)
             
-        #     scores = (np.exp(logits).T / np.exp(logits).sum(-1)).T
-        #     print(scores)
-        #     val = sp.special.logit(scores)# use one vs rest logit units
-        #     print("val: ", val)
-        #     return val
+            scores = (np.exp(logits).T / np.exp(logits).sum(-1)).T
+            print(scores)
+            val = sp.special.logit(scores)# use one vs rest logit units
+            print("val: ", val)
+            return val
         
         all_logits, all_highlights = [], []
         cur_start = 0
-        explainer = shap.Explainer(model, tokenizer)
+        explainer = shap.Explainer(predict, tokenizer)
         while cur_start < len(texts):
             texts_ = texts[cur_start:cur_start + bsize]
             print("texts_ in while loop: ", texts_)
+            print("texts_ length: ", len(texts_))
             shap_values = explainer(texts_)
             # shap.plots.text(shap_values)
 
