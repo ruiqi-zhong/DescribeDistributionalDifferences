@@ -193,12 +193,12 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
                 max_length=max_length, 
                 padding=True,
                 is_split_into_words=True).to(device)
-            print("inputs: ", inputs)
-            outputs = model(**inputs)
-            print("outputs: ", outputs)
+            # print("inputs: ", inputs)
+            logits = lsm(model_output_dict['logits'].detach().cpu()).numpy().tolist()
+            print("outputs: ", logits)
             # [0].detach().cpu().numpy()
             
-            scores = [(np.exp(o).T / np.exp(o).sum(-1)).T for o in outputs]
+            scores = (np.exp(logits).T / np.exp(logits).sum(-1)).T
             print(scores)
             val = sp.special.logit(scores)# use one vs rest logit units
             print("val: ", val)
