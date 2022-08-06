@@ -229,7 +229,7 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
             #         for v in x
             #     ]
             # ).cpu()
-            print(type(x))
+            # print(type(x))
             inputs = tokenizer(
                 x.tolist(),
                 return_tensors="pt",
@@ -239,7 +239,7 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
                 padding=True,
             ).to(device)
 
-            print(inputs)
+            # print(inputs)
             # print("inputs: ", inputs)
             model_output_dict = model(**inputs)
             logits = lsm(model_output_dict["logits"].detach().cpu()).numpy().tolist()
