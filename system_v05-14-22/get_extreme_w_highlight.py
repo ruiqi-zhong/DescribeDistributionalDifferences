@@ -194,7 +194,7 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
                 padding=True,
                 is_split_into_words=True).to(device)
             print("inputs: ", inputs)
-            outputs = model(**inputs)["highlight"]
+            outputs = model(**inputs)
             print("outputs: ", outputs)
             # [0].detach().cpu().numpy()
             
