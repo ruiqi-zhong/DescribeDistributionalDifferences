@@ -229,6 +229,7 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
             #         for v in x
             #     ]
             # ).cpu()
+            print(type(x))
             inputs = tokenizer(
                 x,
                 return_tensors="pt",
