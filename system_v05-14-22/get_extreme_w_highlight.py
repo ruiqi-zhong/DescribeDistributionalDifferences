@@ -221,7 +221,7 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
         def predict(x):
             print("texts_: ", x)
             print("texts_ length: ", len(texts_))
-            inputs = tokenizer.encode(
+            inputs = tokenizer(
                 x,
                 return_tensors="pt",
                 truncation=True,
