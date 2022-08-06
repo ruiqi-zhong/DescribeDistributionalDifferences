@@ -193,12 +193,9 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
                 max_length=max_length, 
                 padding=True,
                 is_split_into_words=True).to(device)
-            # tv = torch.tensor(
-            #     [tokenizer.encode(v, padding=True, max_length=max_length, truncation=True) for v in x]
-            # ).to(device)
-            
+            print("inputs: ", inputs)
             outputs = model(**inputs)["highlight"]
-            print(outputs)
+            print("outputs: ", outputs)
             # [0].detach().cpu().numpy()
             
             scores = [(np.exp(o).T / np.exp(o).sum(-1)).T for o in outputs]
