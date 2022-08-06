@@ -186,7 +186,7 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
         }
     else:
         print("use shap")
-        def predict(x):
+        def predict(texts_):
             inputs = tokenizer(texts_, 
                 return_tensors='pt', 
                 truncation=True, 
