@@ -191,7 +191,7 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
                 return_tensors='pt', 
                 truncation=True, 
                 max_length=max_length, 
-                padding=True
+                padding=True,
                 is_split_into_words=True).to(device)
             # tv = torch.tensor(
             #     [tokenizer.encode(v, padding=True, max_length=max_length, truncation=True) for v in x]
