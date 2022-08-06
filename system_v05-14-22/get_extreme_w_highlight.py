@@ -191,7 +191,7 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
             # tv = torch.tensor(
             #     [tokenizer.encode(v, padding=True, max_length=max_length, truncation=True) for v in x]
             # ).to(device)
-            outputs = model(**inputs)["highlight"].detatch().cpu().numpy()
+            outputs = model(**inputs)["highlight"]
             # [0].detach().cpu().numpy()
             print("outsputs: ", outputs)
             
