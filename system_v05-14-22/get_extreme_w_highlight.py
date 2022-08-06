@@ -212,7 +212,7 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
         
         all_logits, all_highlights = [], []
         cur_start = 0
-        explainer = shap.Explainer(predict, tokenizer)
+        explainer = shap.Explainer(model, tokenizer)
         while cur_start < len(texts):
             texts_ = texts[cur_start:cur_start + bsize]
             print("texts_ in while loop: ", texts_)
