@@ -186,10 +186,10 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
         }
     else:
         print("use shap")
-        def predict(texts_):
-            print("texts_: ", texts_)
+        def predict(x):
+            print("texts_: ", x)
             print("texts_ length: ", len(texts_))
-            inputs = tokenizer.encode(texts_, 
+            inputs = tokenizer.encode(x, 
                 return_tensors='pt', 
                 truncation=True, 
                 max_length=max_length, 
@@ -240,7 +240,7 @@ def train_and_eval(cv_dict, use_shap):
 def eval_only(pos, neg, use_shap):
     print("eval_only")
     model = RoBERTaSeq().to(device)
-    tokenizer = AutoTokenizer.from_pretrained(pretrain_model)
+    tokenizer = AutoTokenizer.from_pretrained(pretrain_model, is_split_into_words=True)
     for fold_idx, cv_dict in enumerate(cv(pos, neg, NUM_FOLD)):
         pos_eval_dict = evaluate(cv_dict['test_pos'], use_shap, model, tokenizer)
 
