@@ -45,8 +45,8 @@ if __name__ == "__main__":
         d0_index, d1_index = pair[0], pair[1]
 
         d0, d1 = clusters[d0_index], clusters[d1_index]
-        try:
-            get_rep(pos=d0, neg=d1, pair="shap-" + str(i))
-        except Exception as e:
-            print("error: ", e)
-            continue
+        # try:
+        get_rep(pos=d0, neg=d1, pair="shap-" + str(i))
+        # except Exception as e:
+        #     print("error: ", e)
+        #     continue
