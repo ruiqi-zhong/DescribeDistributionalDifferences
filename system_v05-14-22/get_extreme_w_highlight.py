@@ -235,7 +235,7 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
                 return_tensors="pt",
                 truncation=True,
                 max_length=max_length,
-                is_split_into_words=True,
+                # is_split_into_words=True,
                 padding=True,
             ).to(device)
 
@@ -294,7 +294,7 @@ def eval_only(pos, neg, use_shap):
     model = RoBERTaSeq().to(device)
     tokenizer = AutoTokenizer.from_pretrained(
         pretrain_model,
-        add_prefix_space=True,
+        # add_prefix_space=True,
     )
     for fold_idx, cv_dict in enumerate(cv(pos, neg, NUM_FOLD)):
         pos_eval_dict = evaluate(cv_dict["test_pos"], use_shap, model, tokenizer)
