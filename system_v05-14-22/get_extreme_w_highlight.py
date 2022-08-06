@@ -240,7 +240,7 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
 
             print(inputs)
             # print("inputs: ", inputs)
-            model_output_dict = model(inputs)
+            model_output_dict = model(**inputs)
             logits = lsm(model_output_dict["logits"].detach().cpu()).numpy().tolist()
             print("outputs: ", logits)
 
