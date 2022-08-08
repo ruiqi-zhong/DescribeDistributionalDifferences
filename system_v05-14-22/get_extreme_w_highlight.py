@@ -12,6 +12,7 @@ from torch import nn
 from sklearn.metrics import auc, roc_curve
 import scipy as sp
 
+from contextlib import redirect_stdout
 
 import shap
 
@@ -240,13 +241,14 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
         explainer = shap.Explainer(predict, tokenizer)
         while cur_start < len(texts):
             texts_ = texts[cur_start : cur_start + bsize]
-            # print("texts_ in while loop: ", texts_)
-            # print("texts_ length: ", len(texts_))
 
             shap_values = explainer(texts_)
             shap.plots.text(shap_values)
 
             print("shap_values: ", shap_values)
+            with open("shap_values.txt", "w") as f:
+                with redirect_stdout(f):
+                    print(shap_values)
             cur_start += bsize
 
 
