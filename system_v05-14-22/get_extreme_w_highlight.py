@@ -19,6 +19,7 @@ import shap
 device = "cuda" if torch.cuda.is_available() else "cpu"
 pretrain_model = "roberta-large"
 
+# Look at force plot for SVG, probaby look at only the red highlight? except make it blue
 
 TOP_K = 100
 NUM_FOLD = 4
@@ -225,7 +226,6 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
                 return_tensors="pt",
                 truncation=True,
                 max_length=max_length,
-                # is_split_into_words=True,
                 padding=True,
             ).to(device)
 
