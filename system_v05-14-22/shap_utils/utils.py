@@ -69,7 +69,14 @@ def text(
             return tokens, values, group_sizes
 
     print("shap values shape: ", len(shap_values.shape))
-
+    if len(shap_values.shape) == 2 and (
+        shap_values.output_names is None or isinstance(shap_values.output_names, str)
+    ):
+        print("1")
+    if len(shap_values.shape) == 2 and shap_values.output_names is not None:
+        print("2")
+    if len(shap_values.shape) == 3:
+        print("3")
     xmin, xmax, cmax = values_min_max(shap_values.values, shap_values.base_values)
     uuid = "".join(random.choices(string.ascii_lowercase, k=20))
 
