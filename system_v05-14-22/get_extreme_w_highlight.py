@@ -238,7 +238,7 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
             # print("inputs: ", inputs)
             model_output_dict = model(**inputs)
             logits = lsm(model_output_dict["logits"].detach().cpu()).numpy().tolist()
-            print(logits)
+            print("logits:", logits)
             return logits
 
         all_logits, all_highlights = [], []
@@ -286,13 +286,13 @@ def eval_only(pos, neg, use_shap):
     )
     out = []
     for fold_idx, cv_dict in enumerate(cv(pos, neg, NUM_FOLD)):
-        if (use_shap):
+        if use_shap:
             pos_eval_out = evaluate(cv_dict["test_pos"], use_shap, model, tokenizer)
             out.add(pos_eval_out)
 
-    with open("shap_values.txt", "w") as f: 
+    with open("shap_values.txt", "w") as f:
         f.write(out)
-                
+
     return
 
 
