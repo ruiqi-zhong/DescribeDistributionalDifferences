@@ -240,7 +240,7 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
             model_output_dict = model(**inputs)
             print("output: ", model_output_dict)
             logits = lsm(model_output_dict["logits"].detach().cpu()).numpy().tolist()
-            print(len(logits))
+            logits = logits[:, 1]
             print("logits:", logits)
             return logits
 
@@ -250,6 +250,7 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
         while cur_start < len(texts):
             texts_ = texts[cur_start : cur_start + bsize]
             shap_values = explainer(texts_)
+            print("shap_values: ", shap_values)
             shap_text = text(shap_values)
 
             out.add(shap_text)
