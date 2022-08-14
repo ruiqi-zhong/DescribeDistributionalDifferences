@@ -226,7 +226,7 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
         out = []
 
         def predict(x):
-            print("x.toList(): ", x.toList())
+            print("x.toList(): ", x.tolist())
             inputs = tokenizer(
                 x.tolist(),
                 return_tensors="pt",
