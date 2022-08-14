@@ -81,16 +81,7 @@ def text(
     output_name = (
         shap_values.output_names if isinstance(shap_values.output_names, str) else ""
     )
-    # get_highlight(
-    #     values,
-    #     shap_values.base_values,
-    #     shap_values.base_values + values.sum(),
-    #     encoded_tokens,
-    #     uuid,
-    #     xmin,
-    #     xmax,
-    #     output_name,
-    # )
+
     out = ""
 
     for i, token in enumerate(tokens):
@@ -103,6 +94,8 @@ def text(
         else:
             value_label = str(values[i].round(3)) + " / " + str(group_sizes[i])
 
-        out += f"""<span style='background: rgba{color}'>{value_label}</span>"""
+        out += f"""<span style='background: rgba{color}'>
+            {token.replace("<", "&lt;").replace(">", "&gt;").replace(' ##', '')}
+            </span>"""
 
     return out

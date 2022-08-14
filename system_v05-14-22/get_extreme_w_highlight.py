@@ -16,6 +16,9 @@ from contextlib import redirect_stdout
 
 import shap
 
+from shap_utils.utils import text
+
+
 device = "cuda" if torch.cuda.is_available() else "cpu"
 pretrain_model = "roberta-large"
 
@@ -220,6 +223,8 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
     else:
         print("use shap")
 
+        out = []
+
         def predict(x):
             inputs = tokenizer(
                 x.tolist(),
@@ -243,13 +248,12 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
             texts_ = texts[cur_start : cur_start + bsize]
 
             shap_values = explainer(texts_)
-            shap.plots.text(shap_values)
+            shap_text = text(shap_values)
 
-            print("shap_values: ", shap_values)
-            with open("shap_values.txt", "w") as f:
-                with redirect_stdout(f):
-                    print(shap_values)
+            out.add(shap_text)
             cur_start += bsize
+
+        return out
 
 
 def train_and_eval(cv_dict, use_shap):
@@ -280,9 +284,15 @@ def eval_only(pos, neg, use_shap):
         pretrain_model,
         # add_prefix_space=True,
     )
+    out = []
     for fold_idx, cv_dict in enumerate(cv(pos, neg, NUM_FOLD)):
-        pos_eval_dict = evaluate(cv_dict["test_pos"], use_shap, model, tokenizer)
+        if (use_shap):
+            pos_eval_out = evaluate(cv_dict["test_pos"], use_shap, model, tokenizer)
+            out.add(pos_eval_out)
 
+    with open("shap_values.txt", "w") as f: 
+        f.write(out)
+                
     return
 
 
