@@ -226,6 +226,7 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
         out = []
 
         def predict(x):
+            print("x.toList(): ", x.toList())
             inputs = tokenizer(
                 x.tolist(),
                 return_tensors="pt",
@@ -234,10 +235,12 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
                 padding=True,
             ).to(device)
 
-            # print(inputs)
+            print("inputs: ", inputs)
             # print("inputs: ", inputs)
             model_output_dict = model(**inputs)
+            print("output: ", model_output_dict)
             logits = lsm(model_output_dict["logits"].detach().cpu()).numpy().tolist()
+            print(len(logits))
             print("logits:", logits)
             return logits
 
@@ -246,7 +249,6 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
         explainer = shap.Explainer(predict, tokenizer)
         while cur_start < len(texts):
             texts_ = texts[cur_start : cur_start + bsize]
-
             shap_values = explainer(texts_)
             shap_text = text(shap_values)
 
