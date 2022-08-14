@@ -72,11 +72,140 @@ def text(
     if len(shap_values.shape) == 2 and (
         shap_values.output_names is None or isinstance(shap_values.output_names, str)
     ):
-        print("1")
+        print("OPTION 1======")
+
+        xmin = 0
+        xmax = 0
+        cmax = 0
+
+        for i, v in enumerate(shap_values):
+            values, clustering = unpack_shap_explanation_contents(v)
+            tokens, values, group_sizes = process_shap_values(
+                v.data, values, grouping_threshold, separator, clustering
+            )
+
+            if i == 0:
+                xmin, xmax, cmax = values_min_max(values, v.base_values)
+                continue
+
+            xmin_i, xmax_i, cmax_i = values_min_max(values, v.base_values)
+            if xmin_i < xmin:
+                xmin = xmin_i
+            if xmax_i > xmax:
+                xmax = xmax_i
+            if cmax_i > cmax:
+                cmax = cmax_i
+        out = ""
+        for i, v in enumerate(shap_values):
+            out += text(
+                v,
+                num_starting_labels=num_starting_labels,
+                grouping_threshold=grouping_threshold,
+                separator=separator,
+                xmin=xmin,
+                xmax=xmax,
+                cmax=cmax,
+                display=False,
+            )
+        return out
+
     if len(shap_values.shape) == 2 and shap_values.output_names is not None:
-        print("2")
+        print("OPTION 2======")
+        # xmin_computed = None
+        # xmax_computed = None
+        # cmax_computed = None
+
+        # for i in range(shap_values.shape[-1]):
+        #     values, clustering = unpack_shap_explanation_contents(shap_values[:, i])
+        #     tokens, values, group_sizes = process_shap_values(
+        #         shap_values[:, i].data,
+        #         values,
+        #         grouping_threshold,
+        #         separator,
+        #         clustering,
+        #     )
+
+        #     # if i == 0:
+        #     #     xmin, xmax, cmax = values_min_max(values, shap_values[:,i].base_values)
+        #     #     continue
+
+        #     xmin_i, xmax_i, cmax_i = values_min_max(
+        #         values, shap_values[:, i].base_values
+        #     )
+        #     if xmin_computed is None or xmin_i < xmin_computed:
+        #         xmin_computed = xmin_i
+        #     if xmax_computed is None or xmax_i > xmax_computed:
+        #         xmax_computed = xmax_i
+        #     if cmax_computed is None or cmax_i > cmax_computed:
+        #         cmax_computed = cmax_i
+
+        # if xmin is None:
+        #     xmin = xmin_computed
+        # if xmax is None:
+        #     xmax = xmax_computed
+        # if cmax is None:
+        #     cmax = cmax_computed
+
+        # output_values = shap_values.values.sum(0) + shap_values.base_values
+        # output_max = np.max(np.abs(output_values))
+        # for i, name in enumerate(shap_values.output_names):
+        #     scaled_value = 0.5 + 0.5 * output_values[i] / (output_max + 1e-8)
+        #     color = colors.red_transparent_blue(scaled_value)
+        #     color = (color[0] * 255, color[1] * 255, color[2] * 255, color[3])
+
     if len(shap_values.shape) == 3:
-        print("3")
+        print("OPTION 3======")
+
+        xmin_computed = None
+        xmax_computed = None
+        cmax_computed = None
+
+        for i in range(shap_values.shape[-1]):
+            for j in range(shap_values.shape[0]):
+                values, clustering = unpack_shap_explanation_contents(
+                    shap_values[j, :, i]
+                )
+                tokens, values, group_sizes = process_shap_values(
+                    shap_values[j, :, i].data,
+                    values,
+                    grouping_threshold,
+                    separator,
+                    clustering,
+                )
+
+                xmin_i, xmax_i, cmax_i = values_min_max(
+                    values, shap_values[j, :, i].base_values
+                )
+                if xmin_computed is None or xmin_i < xmin_computed:
+                    xmin_computed = xmin_i
+                if xmax_computed is None or xmax_i > xmax_computed:
+                    xmax_computed = xmax_i
+                if cmax_computed is None or cmax_i > cmax_computed:
+                    cmax_computed = cmax_i
+
+        if xmin is None:
+            xmin = xmin_computed
+        if xmax is None:
+            xmax = xmax_computed
+        if cmax is None:
+            cmax = cmax_computed
+
+        out = ""
+        for i, v in enumerate(shap_values):
+            out += text(
+                v,
+                num_starting_labels=num_starting_labels,
+                grouping_threshold=grouping_threshold,
+                separator=separator,
+                xmin=xmin,
+                xmax=xmax,
+                cmax=cmax,
+                display=False,
+            )
+
+        return out
+    print("MAIN======")
+
     xmin, xmax, cmax = values_min_max(shap_values.values, shap_values.base_values)
     uuid = "".join(random.choices(string.ascii_lowercase, k=20))
 
