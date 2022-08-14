@@ -254,7 +254,7 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
             print("shap_values: ", shap_values)
             shap_text = text(shap_values)
 
-            out.add(shap_text)
+            out.append(shap_text)
             cur_start += bsize
 
         return out
@@ -292,7 +292,7 @@ def eval_only(pos, neg, use_shap):
     for fold_idx, cv_dict in enumerate(cv(pos, neg, NUM_FOLD)):
         if use_shap:
             pos_eval_out = evaluate(cv_dict["test_pos"], use_shap, model, tokenizer)
-            out.add(pos_eval_out)
+            out.append(pos_eval_out)
 
     with open("shap_values.txt", "w") as f:
         f.write(out)
