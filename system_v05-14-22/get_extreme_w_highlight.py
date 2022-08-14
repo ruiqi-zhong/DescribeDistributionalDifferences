@@ -238,7 +238,7 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
             # print("inputs: ", inputs)
             model_output_dict = model(**inputs)
             logits = lsm(model_output_dict["logits"].detach().cpu()).numpy().tolist()
-
+            print(logits)
             return logits
 
         all_logits, all_highlights = [], []
