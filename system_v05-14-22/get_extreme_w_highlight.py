@@ -226,6 +226,7 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
         out = []
 
         def predict(x):
+            # TODO: need to set indices based off of positive or negative results
             # print("x.toList(): ", x.tolist())
             inputs = tokenizer(
                 x.tolist(),

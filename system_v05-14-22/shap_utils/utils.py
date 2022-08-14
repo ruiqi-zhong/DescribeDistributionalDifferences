@@ -68,6 +68,8 @@ def text(
         else:
             return tokens, values, group_sizes
 
+    print("shap values shape: ", len(shap_values.shape))
+
     xmin, xmax, cmax = values_min_max(shap_values.values, shap_values.base_values)
     uuid = "".join(random.choices(string.ascii_lowercase, k=20))
 
