@@ -235,13 +235,13 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
                 padding=True,
             ).to(device)
 
-            print("inputs: ", inputs)
+            # print("inputs: ", inputs)
             # print("inputs: ", inputs)
             model_output_dict = model(**inputs)
-            print("output: ", model_output_dict)
+            # print("output: ", model_output_dict)
             logits = lsm(model_output_dict["logits"].detach().cpu()).numpy()
             logits = logits[:, 1]
-            print("logits:", logits)
+            # print("logits:", logits)
             return logits
 
         all_logits, all_highlights = [], []
