@@ -281,8 +281,8 @@ def train_and_eval(cv_dict, use_shap):
     }
 
 
-def eval_only(pos, neg, use_shap):
-    print("eval_only")
+def eval_only(pos, neg, use_shap, pathname):
+    print("pathname: ", pathname)
     model = RoBERTaSeq().to(device)
     tokenizer = AutoTokenizer.from_pretrained(
         pretrain_model,
@@ -294,7 +294,8 @@ def eval_only(pos, neg, use_shap):
             pos_eval_out = evaluate(cv_dict["test_pos"], use_shap, model, tokenizer)
             out.append(pos_eval_out)
 
-    with open("shap_values.txt", "w") as f:
+    with open(pathname, "w") as f:
+        out = json.dumps(out, indent=4)
         f.write(out)
 
     return
