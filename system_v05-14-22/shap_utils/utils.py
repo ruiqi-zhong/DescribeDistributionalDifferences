@@ -209,17 +209,19 @@ def text(
                 xmax = xmax_i
             if cmax_i > cmax:
                 cmax = cmax_i
-        out = ""
+        out = []
         for i, v in enumerate(shap_values):
-            out += text(
-                v,
-                num_starting_labels=num_starting_labels,
-                grouping_threshold=grouping_threshold,
-                separator=separator,
-                xmin=xmin,
-                xmax=xmax,
-                cmax=cmax,
-                display=False,
+            out.append(
+                text(
+                    v,
+                    num_starting_labels=num_starting_labels,
+                    grouping_threshold=grouping_threshold,
+                    separator=separator,
+                    xmin=xmin,
+                    xmax=xmax,
+                    cmax=cmax,
+                    display=False,
+                )
             )
         return out
 
@@ -304,9 +306,9 @@ def text(
         if cmax is None:
             cmax = cmax_computed
 
-        out = ""
+        out = []
         for i, v in enumerate(shap_values):
-            out += text(
+            out.append(text(
                 v,
                 num_starting_labels=num_starting_labels,
                 grouping_threshold=grouping_threshold,
@@ -315,7 +317,7 @@ def text(
                 xmax=xmax,
                 cmax=cmax,
                 display=False,
-            )
+            ))
 
         return out
     # print("MAIN======")
