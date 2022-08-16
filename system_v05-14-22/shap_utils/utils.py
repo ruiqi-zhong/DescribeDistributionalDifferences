@@ -182,11 +182,11 @@ def text(
     cmax=None,
     display=True,
 ):
-    print("shap values shape: ", len(shap_values.shape))
+    # print("shap values shape: ", len(shap_values.shape))
     if len(shap_values.shape) == 2 and (
         shap_values.output_names is None or isinstance(shap_values.output_names, str)
     ):
-        print("OPTION 1======")
+        # print("OPTION 1======")
 
         xmin = 0
         xmax = 0
@@ -268,7 +268,7 @@ def text(
         #     color = (color[0] * 255, color[1] * 255, color[2] * 255, color[3])
 
     if len(shap_values.shape) == 3:
-        print("OPTION 3======")
+        # print("OPTION 3======")
 
         xmin_computed = None
         xmax_computed = None
@@ -318,7 +318,7 @@ def text(
             )
 
         return out
-    print("MAIN======")
+    # print("MAIN======")
 
     xmin, xmax, cmax = values_min_max(shap_values.values, shap_values.base_values)
     uuid = "".join(random.choices(string.ascii_lowercase, k=20))
@@ -346,8 +346,6 @@ def text(
         else:
             value_label = str(values[i].round(3)) + " / " + str(group_sizes[i])
 
-        out += f"""<span style='background: rgba{color}'>
-            {token.replace("<", "&lt;").replace(">", "&gt;").replace(' ##', '')}
-            </span>"""
+        out += f"<span style='background: rgba{color}'>{token.replace('<', '&lt;').replace('>', '&gt;').replace(' ##', '')}</span>"
 
     return out
