@@ -251,10 +251,10 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
         while cur_start < len(texts):
             texts_ = texts[cur_start : cur_start + bsize]
             shap_values = explainer(texts_)
-            print("shap_values: ", shap_values)
+            # print("shap_values: ", shap_values)
             shap_text = text(shap_values)
-            print("shap_text: ", shap_text)
-            out.append(shap_text)
+            # print("shap_text: ", shap_text)
+            out.extend(shap_text)
             cur_start += bsize
 
         return out
