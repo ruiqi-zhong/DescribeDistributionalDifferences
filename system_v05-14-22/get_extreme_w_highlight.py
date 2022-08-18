@@ -259,13 +259,13 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
             # print("shap_text: ", shap_text)
             # out.extend(shap_text)
 
-            # inputs = tokenizer(
-            #     texts_,
-            #     return_tensors="pt",
-            #     truncation=True,
-            #     max_length=max_length,
-            #     padding=True,
-            # ).to(device)
+            inputs = tokenizer(
+                texts_,
+                return_tensors="pt",
+                truncation=True,
+                max_length=max_length,
+                padding=True,
+            ).to(device)
             model_output_dict = model(**inputs)
             logits = lsm(model_output_dict["logits"].detach().cpu()).numpy().tolist()
             print("texts_: ", texts_)
