@@ -308,16 +308,18 @@ def text(
 
         out = []
         for i, v in enumerate(shap_values):
-            out.append(text(
-                v,
-                num_starting_labels=num_starting_labels,
-                grouping_threshold=grouping_threshold,
-                separator=separator,
-                xmin=xmin,
-                xmax=xmax,
-                cmax=cmax,
-                display=False,
-            ))
+            out.append(
+                text(
+                    v,
+                    num_starting_labels=num_starting_labels,
+                    grouping_threshold=grouping_threshold,
+                    separator=separator,
+                    xmin=xmin,
+                    xmax=xmax,
+                    cmax=cmax,
+                    display=False,
+                )
+            )
 
         return out
     # print("MAIN======")
@@ -336,6 +338,7 @@ def text(
         shap_values.output_names if isinstance(shap_values.output_names, str) else ""
     )
 
+    original_string = ""
     out = ""
 
     for i, token in enumerate(tokens):
@@ -347,7 +350,8 @@ def text(
             value_label = str(values[i].round(3))
         else:
             value_label = str(values[i].round(3)) + " / " + str(group_sizes[i])
-
+        original_string += token
         out += f"<span style='background: rgba{color}'>{token.replace('<', '&lt;').replace('>', '&gt;').replace(' ##', '')}</span>"
 
-    return out
+    out_dict = {original_string: {"span": out}}
+    return out_dict
