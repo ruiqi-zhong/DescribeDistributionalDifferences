@@ -252,12 +252,24 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
         explainer = shap.Explainer(predict, tokenizer)
         while cur_start < len(texts):
             texts_ = texts[cur_start : cur_start + bsize]
-            # print("texts_: ", texts_)
-            shap_values = explainer(texts_)
-            print("shap_values: ", shap_values)
-            shap_text = text(shap_values)
-            print("shap_text: ", shap_text)
-            out.extend(shap_text)
+            # # print("texts_: ", texts_)
+            # shap_values = explainer(texts_)
+            # print("shap_values: ", shap_values)
+            # shap_text = text(shap_values)
+            # print("shap_text: ", shap_text)
+            # out.extend(shap_text)
+
+            # inputs = tokenizer(
+            #     texts_,
+            #     return_tensors="pt",
+            #     truncation=True,
+            #     max_length=max_length,
+            #     padding=True,
+            # ).to(device)
+            model_output_dict = model(**inputs)
+            logits = lsm(model_output_dict["logits"].detach().cpu()).numpy().tolist()
+            print("texts_: ", texts_)
+            print("logits: ", logits)
             cur_start += bsize
 
         return out
