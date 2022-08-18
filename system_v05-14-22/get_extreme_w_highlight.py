@@ -241,8 +241,10 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
             model_output_dict = model(**inputs)
             # print("output: ", model_output_dict)
             logits = lsm(model_output_dict["logits"].detach().cpu()).numpy()
+            # print("logits before lsm: ", model_output_dict["logits"].detach().cpu().numpy()[, 1])
             logits = logits[:, 1]
-            # print("logits:", logits)
+
+            print("logits:", logits)
             return logits
 
         all_logits, all_highlights = [], []
