@@ -223,8 +223,6 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
     else:
         print("use shap")
 
-        out = []
-
         def predict(x):
             # TODO: need to set indices based off of positive or negative results
             # print("x.toList(): ", x.tolist())
@@ -250,26 +248,27 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
         all_logits, all_highlights = [], []
         cur_start = 0
         explainer = shap.Explainer(predict, tokenizer)
+        out = {}
         while cur_start < len(texts):
             texts_ = texts[cur_start : cur_start + bsize]
-            # # print("texts_: ", texts_)
-            # shap_values = explainer(texts_)
-            # print("shap_values: ", shap_values)
-            # shap_text = text(shap_values)
-            # print("shap_text: ", shap_text)
-            # out.extend(shap_text)
+            # print("texts_: ", texts_)
+            shap_values = explainer(texts_)
+            print("shap_values: ", shap_values)
+            shap_text = text(shap_values)
+            print("shap_text: ", shap_text)
 
-            inputs = tokenizer(
-                texts_,
-                return_tensors="pt",
-                truncation=True,
-                max_length=max_length,
-                padding=True,
-            ).to(device)
-            model_output_dict = model(**inputs)
-            logits = lsm(model_output_dict["logits"].detach().cpu()).numpy().tolist()
-            print("texts_: ", texts_)
-            print("logits: ", logits)
+            out = out | shap_text
+
+            # inputs = tokenizer(
+            #     texts_,
+            #     return_tensors="pt",
+            #     truncation=True,
+            #     max_length=max_length,
+            #     padding=True,
+            # ).to(device)
+            # model_output_dict = model(**inputs)
+            # logits = lsm(model_output_dict["logits"].detach().cpu()).numpy().tolist()
+
             cur_start += bsize
 
         return out
@@ -307,7 +306,7 @@ def eval_only(pos, neg, use_shap, pathname):
     for fold_idx, cv_dict in enumerate(cv(pos, neg, NUM_FOLD)):
         if use_shap:
             pos_eval_out = evaluate(cv_dict["test_pos"], use_shap, model, tokenizer)
-            out.extend(pos_eval_out)
+            out.append(pos_eval_out)
 
     with open(pathname, "w") as f:
         out = json.dumps(out, indent=4)
