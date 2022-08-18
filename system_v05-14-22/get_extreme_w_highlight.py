@@ -227,7 +227,7 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
 
         def predict(x):
             # TODO: need to set indices based off of positive or negative results
-            # print("x.toList(): ", x.tolist())
+            print("x.toList(): ", x.tolist())
             inputs = tokenizer(
                 x.tolist(),
                 return_tensors="pt",
@@ -250,6 +250,7 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
         explainer = shap.Explainer(predict, tokenizer)
         while cur_start < len(texts):
             texts_ = texts[cur_start : cur_start + bsize]
+            print("texts_: ", texts_)
             shap_values = explainer(texts_)
             # print("shap_values: ", shap_values)
             shap_text = text(shap_values)
