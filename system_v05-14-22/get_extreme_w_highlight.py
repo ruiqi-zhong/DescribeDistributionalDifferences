@@ -258,16 +258,18 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
             print("shap_text: ", shap_text)
 
             out = out | shap_text
+            inputs = tokenizer(
+                texts_,
+                return_tensors="pt",
+                truncation=True,
+                max_length=max_length,
+                padding=True,
+            ).to(device)
+            model_output_dict = model(**inputs)
+            logits = lsm(model_output_dict["logits"].detach().cpu()).numpy().tolist()
 
-            # inputs = tokenizer(
-            #     texts_,
-            #     return_tensors="pt",
-            #     truncation=True,
-            #     max_length=max_length,
-            #     padding=True,
-            # ).to(device)
-            # model_output_dict = model(**inputs)
-            # logits = lsm(model_output_dict["logits"].detach().cpu()).numpy().tolist()
+            for i, texts in enumerate(texts_):
+                out[texts]["logits"] = logits[i]
 
             cur_start += bsize
 
