@@ -267,7 +267,7 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
             ).to(device)
             model_output_dict = model(**inputs)
             logits = lsm(model_output_dict["logits"].detach().cpu()).numpy().tolist()
-
+            print("logits: ", logits)
             for i, texts in enumerate(texts_):
                 out[texts]["logits"] = logits[i]
 
