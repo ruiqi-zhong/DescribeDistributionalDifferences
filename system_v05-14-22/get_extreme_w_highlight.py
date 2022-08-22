@@ -252,12 +252,12 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
         while cur_start < len(texts):
             texts_ = texts[cur_start : cur_start + bsize]
             # print("texts_: ", texts_)
-            # shap_values = explainer(texts_)
+            shap_values = explainer(texts_)
             # print("shap_values: ", shap_values)
-            # shap_text = text(shap_values)
+            shap_text = text(shap_values)
             # print("shap_text: ", shap_text)
 
-            # out = out | shap_text
+            out = out | shap_text
             inputs = tokenizer(
                 texts_,
                 return_tensors="pt",
@@ -268,13 +268,12 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
             # print("inputs: ", inputs)
             model_output_dict = model(**inputs)
             logits = lsm(model_output_dict["logits"].detach().cpu()).numpy().tolist()
-            print(len(logits), len(texts_))
-            print(texts_)
-            print("logits: ", logits)
-            for i, texts in enumerate(texts_):
-                a = logits[i]
+            # print(len(logits), len(texts_))
+            # print(texts_)
+            # print("logits: ", logits)
+            for i, texts in enumerate(logits):
                 # print(texts_[i], logits[i])
-            # out[texts]["logits"] = logits[i]
+                out[texts]["logits"] = logits[i]
 
             cur_start += bsize
 
