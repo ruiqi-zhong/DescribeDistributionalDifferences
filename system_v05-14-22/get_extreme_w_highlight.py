@@ -271,9 +271,9 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
             # print(len(logits), len(texts_))
             # print(texts_)
             # print("logits: ", logits)
-            for i, texts in enumerate(logits):
+            for i in range(len(logits)):
                 # print(texts_[i], logits[i])
-                out[texts]["logits"] = logits[i]
+                out[texts_[i]]["logits"] = logits[i]
 
             cur_start += bsize
 
