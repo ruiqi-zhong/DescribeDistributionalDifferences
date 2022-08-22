@@ -271,7 +271,9 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
             # print(len(logits), len(texts_))
             # print(texts_)
             # print("logits: ", logits)
+            print("out: ", out)
             for i in range(len(logits)):
+                print(texts_[i])
                 # print(texts_[i], logits[i])
                 out[texts_[i]]["logits"] = logits[i]
 
