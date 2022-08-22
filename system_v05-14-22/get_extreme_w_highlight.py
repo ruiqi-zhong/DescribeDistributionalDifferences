@@ -265,11 +265,12 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
                 max_length=max_length,
                 padding=True,
             ).to(device)
-            print("inputs: ", inputs)
+            # print("inputs: ", inputs)
             model_output_dict = model(**inputs)
             logits = lsm(model_output_dict["logits"].detach().cpu()).numpy().tolist()
             print("logits: ", logits)
-            # for i, texts in enumerate(texts_):
+            for i, texts in enumerate(texts_):
+                print(texts_[i], logits[i])
             # out[texts]["logits"] = logits[i]
 
             cur_start += bsize
