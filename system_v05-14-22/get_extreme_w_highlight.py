@@ -251,7 +251,7 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
         out = {}
         while cur_start < len(texts):
             texts_ = texts[cur_start : cur_start + bsize]
-            print("texts_: ", texts_)
+            # print("texts_: ", texts_)
             shap_values = explainer(texts_)
             # print("shap_values: ", shap_values)
             shap_text = text(shap_values)
@@ -271,11 +271,12 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
             # print(len(logits), len(texts_))
             # print(texts_)
             # print("logits: ", logits)
-            print("out: ", out)
+            # print("out: ", out)
             for i in range(len(logits)):
                 print(texts_[i])
                 # print(texts_[i], logits[i])
-                out[texts_[i]]["logits"] = logits[i]
+                if texts_[i] in out:
+                    out[texts_[i]]["logits"] = logits[i]
 
             cur_start += bsize
 

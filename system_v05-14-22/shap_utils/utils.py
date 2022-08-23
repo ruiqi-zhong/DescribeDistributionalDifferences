@@ -350,5 +350,5 @@ def text(
         original_string += token
         out += f"<span style='background: rgba{color}'>{token.replace('<', '&lt;').replace('>', '&gt;').replace(' ##', '')}</span>"
 
-    out_dict = {original_string: {"span": "span"}}
+    out_dict = {original_string: {"span": out}}
     return out_dict
