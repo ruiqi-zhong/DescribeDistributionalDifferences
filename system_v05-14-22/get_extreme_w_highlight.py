@@ -221,7 +221,6 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
 
         return {"logits": np.array(all_logits), "highlights": highlights}
     else:
-        print("use shap")
 
         def predict(x):
             # TODO: need to set indices based off of positive or negative results
@@ -234,15 +233,9 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
                 padding=True,
             ).to(device)
 
-            # print("inputs: ", inputs)
-            # print("inputs: ", inputs)
             model_output_dict = model(**inputs)
-            # print("output: ", model_output_dict)
             logits = lsm(model_output_dict["logits"].detach().cpu()).numpy()
-            # print("logits before lsm: ", model_output_dict["logits"].detach().cpu().numpy()[, 1])
             logits = logits[:, 1]
-
-            # print("logits:", logits)
             return logits
 
         all_logits, all_highlights = [], []
@@ -251,11 +244,8 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
         out = {}
         while cur_start < len(texts):
             texts_ = texts[cur_start : cur_start + bsize]
-            # print("texts_: ", texts_)
             shap_values = explainer(texts_)
-            # print("shap_values: ", shap_values)
             shap_text = text(shap_values)
-            # print("shap_text: ", shap_text)
 
             out = out | shap_text
             inputs = tokenizer(
@@ -268,13 +258,7 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
             # print("inputs: ", inputs)
             model_output_dict = model(**inputs)
             logits = lsm(model_output_dict["logits"].detach().cpu()).numpy().tolist()
-            # print(len(logits), len(texts_))
-            # print(texts_)
-            # print("logits: ", logits)
-            # print("out: ", out)
             for i in range(len(logits)):
-                print(texts_[i])
-                # print(texts_[i], logits[i])
                 if texts_[i] in out:
                     out[texts_[i]]["logits"] = logits[i]
 
@@ -285,6 +269,32 @@ def evaluate(texts, use_shap: bool, model, tokenizer):
 
 def train_and_eval(cv_dict, use_shap):
     model, tokenizer = train(cv_dict)
+    if use_shap:
+        pos_eval_dict = evaluate(cv_dict["test_pos"], use_shap, model, tokenizer)
+        neg_eval_dict = evaluate(cv_dict["test_neg"], use_shap, model, tokenizer)
+        pos_text, pos_spans, pos_logits = [], [], []
+        neg_text, neg_spans, neg_logits = [], [], []
+        for text in pos_eval_dict:
+            if "logits" in pos_eval_dict[text]:
+                pos_text.append(text)
+                pos_spans.append(pos_eval_dict[text]["span"])
+                pos_logits.append(pos_eval_dict[text]["logits"][1])
+
+        for text in neg_eval_dict:
+            if "logits" in neg_eval_dict[text]:
+                neg_text.append(text)
+                neg_spans.append(neg_eval_dict[text]["span"])
+                neg_logits.append(neg_eval_dict[text]["logits"][0])
+
+        return {
+            "test_pos_scores": pos_logits,
+            "test_neg_scores": neg_logits,
+            "test_pos_spans": pos_spans,
+            "test_neg_spans": neg_spans,
+            "test_pos_text": pos_text,
+            "test_neg_text": neg_text,
+        }
+
     pos_eval_dict = evaluate(cv_dict["test_pos"], use_shap, model, tokenizer)
     pos_logits, pos_highlights = (
         pos_eval_dict["logits"][:, 1],
@@ -305,45 +315,60 @@ def train_and_eval(cv_dict, use_shap):
 
 
 def eval_only(pos, neg, use_shap, pathname):
-    print("pathname: ", pathname)
     model = RoBERTaSeq().to(device)
     tokenizer = AutoTokenizer.from_pretrained(
         pretrain_model,
-        # add_prefix_space=True,
     )
-    out = []
+    out = {}
     for fold_idx, cv_dict in enumerate(cv(pos, neg, NUM_FOLD)):
         if use_shap:
             pos_eval_out = evaluate(cv_dict["test_pos"], use_shap, model, tokenizer)
-            out.append(pos_eval_out)
+            out = out | pos_eval_out
 
-    with open(pathname, "w") as f:
-        out = json.dumps(out, indent=4)
-        f.write(out)
-
-    return
+    return out
 
 
-def return_extreme_values(pos, neg, train: bool):
+def return_extreme_values(pos, neg, use_shap: bool):
     pos2score, neg2score = {}, {}
     pos2highlight, neg2highlight = {}, {}
 
-    for fold_idx, cv_dict in enumerate(cv(pos, neg, NUM_FOLD)):
-        test_scores = train_and_eval(cv_dict, False)
-        for pos_text, score, highlight in zip(
-            cv_dict["test_pos"],
-            test_scores["test_pos_scores"],
-            test_scores["test_pos_highlight"],
-        ):
-            pos2score[pos_text] = score
-            pos2highlight[pos_text] = highlight
-        for neg_text, score, highlight in zip(
-            cv_dict["test_neg"],
-            test_scores["test_neg_scores"],
-            test_scores["test_neg_highlight"],
-        ):
-            neg2score[neg_text] = score
-            neg2highlight[neg_text] = highlight
+    if use_shap:
+        for fold_idx, cv_dict in enumerate(cv(pos, neg, NUM_FOLD)):
+            test_scores = train_and_eval(cv_dict, use_shap)
+
+            for pos_text, score, span in zip(
+                test_scores["test_pos_text"],
+                test_scores["test_pos_spans"],
+                test_scores["test_pos_scores"],
+            ):
+                pos2score[pos_text] = score
+                pos2highlight[pos_text] = span
+
+            for neg_text, score, span in zip(
+                test_scores["test_neg_text"],
+                test_scores["test_neg_spans"],
+                test_scores["test_neg_scores"],
+            ):
+                pos2score[neg_text] = score
+                pos2highlight[neg_text] = span
+
+    else:
+        for fold_idx, cv_dict in enumerate(cv(pos, neg, NUM_FOLD)):
+            test_scores = train_and_eval(cv_dict, use_shap)
+            for pos_text, score, highlight in zip(
+                cv_dict["test_pos"],
+                test_scores["test_pos_scores"],
+                test_scores["test_pos_highlight"],
+            ):
+                pos2score[pos_text] = score
+                pos2highlight[pos_text] = highlight
+            for neg_text, score, highlight in zip(
+                cv_dict["test_neg"],
+                test_scores["test_neg_scores"],
+                test_scores["test_neg_highlight"],
+            ):
+                neg2score[neg_text] = score
+                neg2highlight[neg_text] = highlight
     return {
         "pos2score": pos2score,
         "neg2score": neg2score,
