@@ -28,7 +28,7 @@ def get_rep(
     # get samples that are representative of the differences between two distributions
     extreme_vals = return_extreme_values(pos, neg, use_shap=True)
     with open(os.path.join(save_folder, "shap_result.json"), "w") as f:
-        out = json.dumps(out, indent=4)
+        out = json.dumps(extreme_vals, indent=4)
         f.write(out)
 
 
