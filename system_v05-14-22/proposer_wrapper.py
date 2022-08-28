@@ -160,7 +160,7 @@ class T5Proposer(Proposer):
                                       return_dict_in_generate=True, 
                                       do_sample=True,
                                       top_k=0,num_return_sequences=n, temperature=temperature,
-                                      ensemble_sample=True, ensemble_method=ensemble_method)
+                                      ensemble_method=ensemble_method)
         completions = self.tok.batch_decode(generated_tokens.sequences, skip_special_tokens=True)
         return completions[:n]
 
