@@ -7,14 +7,15 @@ import torch
 import tqdm
 from collections import defaultdict
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, T5ForConditionalGeneration
-
+from itertools import zip_longest
+import json
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 max_seq_length = 128
 device_count = torch.cuda.device_count()
-BSIZE = 4
+BSIZE = 2
 if device_count == 4:
-    BSIZE = 8
+    BSIZE = 4
 t5tok = AutoTokenizer.from_pretrained('t5-small')
 
 
@@ -99,7 +100,6 @@ def resize(sent_A, sent_B, max_length):
     new_A, new_B = t5tok.decode(toks_A_new), t5tok.decode(toks_B_new)
     return new_A, new_B
 
-
 def query_paired_fitness_controlled_(h, pos, neg, num_examples, m, max_length=128):
     q = 'Is it true that compared to sentence B, sentence A ' + h + '?'
     
@@ -135,7 +135,6 @@ def query_paired_fitness_controlled_(h, pos, neg, num_examples, m, max_length=12
         }
     }
     
-    
 def query_single_fitness_controlled_(h, pos, neg, num_examples, m):
     q = 'Is it true that this sentence ' + h + '?'
     pos, neg = list(pos), list(neg)
@@ -163,6 +162,117 @@ def query_single_fitness_controlled_(h, pos, neg, num_examples, m):
         }
     }
 
+def split_paired_fitness_controlled_(h, pos, neg, m):
+    """Use iterative, active sampling with precomputed confidence to split samples."""
+
+    CONFIDENCE = 95
+    MAX_DEPTH = 18
+    p_file = open(f'sampling/prefixes_{CONFIDENCE}.json', 'r')
+    prefixes = json.loads(p_file.read())
+
+    q = 'Is it true that compared to sentence B, sentence A ' + h + '?'
+    
+    def split(samples, max_length=128):
+        """Splits the samples into the top and bottom halves."""
+        np.random.shuffle(samples) # shuffle samples
+        samples_a, samples_b = samples[::2], samples[1::2]
+
+        reg_qc_dicts, rev_qc_dicts = [], []
+        for sent_A, sent_B in zip_longest(samples_a, samples_b):
+            if not sent_B: # in case odd
+                sent_B = samples[0] # pick random sample
+            resize(sent_A, sent_B, max_length)
+            reg_c = 'sentence A: ' + sent_A + '\n\nsentence B: ' + sent_B
+            reg_qc_dicts.append({'q': q, 'c': reg_c})
+            rev_c = 'sentence A: ' + sent_B + '\n\nsentence B: ' + sent_A
+            rev_qc_dicts.append({'q': q, 'c': rev_c})
+        
+        reg_logits = m.get_logits_from_input_dict(reg_qc_dicts, bsize=BSIZE)
+        rev_logits = m.get_logits_from_input_dict(rev_qc_dicts, bsize=BSIZE)
+
+        net_logits = reg_logits[:,1] - rev_logits[:,1]
+        comparisons = (np.e ** net_logits) > 0.5
+
+        top, bottom = [], []
+        for sent_A, sent_B, comp in zip_longest(samples_a, samples_b, comparisons):
+            if not sent_B:
+                top.append(sent_A) if comp else bottom.append(sent_A)
+            else:
+                if comp: top.append(sent_A), bottom.append(sent_B)
+                else: bottom.append(sent_A), top.append(sent_B)
+
+        return np.array(top), np.array(bottom)
+
+    dists = dict()
+    dists[0] = {'':pos + neg}
+
+    top_half = []
+    bottom_half = []
+
+    for depth in range(1, MAX_DEPTH+1):
+        dists[depth] = {}
+        for record, dist_to_split in dists[depth-1].items():
+            
+            # if reached precomputed stopping point
+            if record in prefixes:
+                prop = prefixes[record]
+                if prop < 0.5: bottom_half.extend(dist_to_split)
+                else: top_half.extend(dist_to_split)
+                continue
+            
+            # if reached max depth
+            if depth == MAX_DEPTH or len(dist_to_split) < 2:
+                wins = sum(int(x) for x in record)
+                if wins / len(record) >= 0.5: bottom_half.extend(dist_to_split)
+                else: top_half.extend(dist_to_split)
+                continue
+            
+            # else split and continue
+            top, bottom = split(dist_to_split)
+            dists[depth][record + '0'] = bottom
+            dists[depth][record + '1'] = top
+
+    pos_pos = [s for s in top_half if s in pos]
+    pos_neg = [s for s in bottom_half if s in pos]
+    neg_pos = [s for s in top_half if s in neg]
+    neg_neg = [s for s in bottom_half if s in neg]
+
+    return {
+        'h': h,
+        'pos_pos':pos_pos,
+        'pos_neg':pos_neg,
+        'neg_pos':neg_pos,
+        'neg_neg':neg_neg,
+    }
+
+def split_single_fitness_controlled_(h, pos, neg, m):
+    q = 'Is it true that this sentence ' + h + '?'
+    pos = list(pos)
+    neg = list(neg)
+
+    qc_dicts = [{'q': q, 'c': s} for s in pos]
+    logits = m.get_logits_from_input_dict(qc_dicts, bsize=BSIZE)[:,1]
+    
+    pos_pos = np.array(pos)[((np.e ** logits) > 0.5).astype(int)]
+    pos_neg = np.array(pos)[((np.e ** logits) <= 0.5).astype(int)]
+
+    qc_dicts = [{'q': q, 'c': s} for s in neg]
+    logits = m.get_logits_from_input_dict(qc_dicts, bsize=BSIZE)[:,1]
+    
+    neg_pos = np.array(neg)[((np.e ** logits) > 0.5).astype(int)]
+    neg_neg = np.array(neg)[((np.e ** logits) <= 0.5).astype(int)]
+
+    return {
+        'h': h,
+        'pos_pos':pos_pos.tolist(),
+        'pos_neg':pos_neg.tolist(),
+        'neg_pos':neg_pos.tolist(),
+        'neg_neg':neg_neg.tolist(),
+        'logits':logits,
+    }
+
+    
+
 
 class DummyVerifier:
 
@@ -176,6 +286,10 @@ class DummyVerifier:
     
     def return_verification(self, h, pos, neg, num_examples):
         result = query_paired_fitness_controlled_(h, pos, neg, num_examples, self.model, max_length=self.seq_length)
+        return result
+
+    def return_split(self, h, pos, neg):
+        result = split_paired_fitness_controlled_(h, pos, neg, self.model)
         return result
 
     
@@ -193,6 +307,9 @@ class Verifier0514:
         result = query_paired_fitness_controlled_(h, pos, neg, num_examples, self.model, max_length=self.seq_length)
         return result
 
+    def return_split(self, h, pos, neg):
+        result = split_paired_fitness_controlled_(h, pos, neg, self.model)
+        return result
 
 class UnifiedQASingle:
     
@@ -209,6 +326,9 @@ class UnifiedQASingle:
         result = query_single_fitness_controlled_(h, pos, neg, num_examples, self.model)
         return result
     
+    def return_split(self, h, pos, neg):
+        result = split_paired_fitness_controlled_(h, pos, neg, self.model)
+        return result
 
 class UnifiedQA_v2Single:
     
@@ -225,6 +345,9 @@ class UnifiedQA_v2Single:
         result = query_single_fitness_controlled_(h, pos, neg, num_examples, self.model)
         return result
     
+    def return_split(self, h, pos, neg):
+        result = split_paired_fitness_controlled_(h, pos, neg, self.model)
+        return result
 
 class UnifiedQA_v2:
 
@@ -240,7 +363,10 @@ class UnifiedQA_v2:
     def return_verification(self, h, pos, neg, num_examples):
         result = query_paired_fitness_controlled_(h, pos, neg, num_examples, self.model, max_length=self.seq_length)
         return result
-    
+
+    def return_split(self, h, pos, neg):
+        result = split_paired_fitness_controlled_(h, pos, neg, self.model)
+        return result
 
 def init_verifier(verifier_name):
     return name2verifier_cls[verifier_name]()
@@ -253,4 +379,3 @@ name2verifier_cls = {
     'unifiedqa_v2single': UnifiedQA_v2Single,
     'unifiedqa_v2': UnifiedQA_v2
 }
-
