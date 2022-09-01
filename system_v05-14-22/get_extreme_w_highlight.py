@@ -336,7 +336,7 @@ def return_extreme_values(pos, neg, use_shap: bool):
         for fold_idx, cv_dict in enumerate(cv(pos, neg, NUM_FOLD)):
             test_scores = train_and_eval(cv_dict, use_shap)
 
-            for pos_text, score, span in zip(
+            for pos_text, span, score in zip(
                 test_scores["test_pos_text"],
                 test_scores["test_pos_spans"],
                 test_scores["test_pos_scores"],
@@ -344,13 +344,13 @@ def return_extreme_values(pos, neg, use_shap: bool):
                 pos2score[pos_text] = score
                 pos2highlight[pos_text] = span
 
-            for neg_text, score, span in zip(
+            for neg_text, span, score in zip(
                 test_scores["test_neg_text"],
                 test_scores["test_neg_spans"],
                 test_scores["test_neg_scores"],
             ):
-                pos2score[neg_text] = score
-                pos2highlight[neg_text] = span
+                neg2score[neg_text] = score
+                neg2highlight[neg_text] = span
 
     else:
         for fold_idx, cv_dict in enumerate(cv(pos, neg, NUM_FOLD)):
