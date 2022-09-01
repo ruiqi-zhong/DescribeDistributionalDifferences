@@ -39,4 +39,4 @@ if __name__ == "__main__":
     neg = [imdb[i]["text"] for i in range(imdb.num_rows) if imdb[i]["label"] == 0]
     pos = [imdb[i]["text"] for i in range(imdb.num_rows) if imdb[i]["label"] == 1]
 
-    get_rep(pos, neg, pair="sentiment_analysis")
+    get_rep(pos[:100], neg[:100], pair="sentiment_analysis")
