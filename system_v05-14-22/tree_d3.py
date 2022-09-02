@@ -96,13 +96,15 @@ class Tree:
         
         pkl.dump(h2result, open(os.path.join(save_folder, 'scored_hypotheses.pkl'), 'wb'))
         
-        if depth == 0:
-            return
 
         # split by top hypothesis
         print([(h, h2result[h]['h_score']) for h in proposed_hypotheses])
         top_h = max(h2result, key=lambda h: h2result[h]['h_score'])
         print(top_h)
+
+
+        if depth == 0:
+            return
 
         self.top_hypothesis = top_h
         splitresult = self.verifier.return_split(top_h, pos, neg)
