@@ -100,11 +100,11 @@ class Tree:
         top_h = max(h2result, key=lambda h: h2result[h]['h_score'])
         print(top_h)
 
+        self.top_hypothesis = top_h
 
         if depth == 0:
             return
 
-        self.top_hypothesis = top_h
         splitresult = self.verifier.return_split(top_h, pos, neg)
         
         left_branch = Tree(

@@ -121,7 +121,10 @@ def query_paired_fitness_controlled_active_(H: List[str], pos: List[str], neg: L
             for h in H}
     
     # num rounds of sampling
-    for _ in range(num_rounds):
+    for i in range(num_rounds):
+        
+        print(f'round: {i}')
+        print(f'num hypotheses: {len(H)}')
 
         # evaluate samples; store logits; evaluate pairwise value
         for h in H:
