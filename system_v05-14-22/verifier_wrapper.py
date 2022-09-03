@@ -5,10 +5,14 @@ import numpy as np
 import re
 import torch
 import tqdm
-from collections import defaultdict
+from collections import Counter
 from transformers import AutoTokenizer, AutoModelForSeq2SeqLM, T5ForConditionalGeneration
 from itertools import zip_longest
 import json
+from typing import List
+from scipy.stats import f_oneway
+from statsmodels.stats.multicomp import pairwise_tukeyhsd
+import itertools
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 max_seq_length = 128
@@ -99,6 +103,130 @@ def resize(sent_A, sent_B, max_length):
             total_token_count += 1
     new_A, new_B = t5tok.decode(toks_A_new), t5tok.decode(toks_B_new)
     return new_A, new_B
+
+def query_paired_fitness_controlled_active_(H: List[str], pos: List[str], neg: List[str], m, sample_size = 10, num_rounds = 20, max_length = 128):
+    """Efficent query of a set of hypotheses H"""
+
+    q_template = 'Is it true that compared to sentence B, sentence A {h} ?'
+    ALPHA = 5e-3
+
+    # set up hypotheses
+    h2result = {h:
+        {'h':h,
+        'pairs':[],
+        'scores':[],
+        'logits':{
+            'positive_logits':[],
+            'negative_logits':[]}}
+            for h in H}
+    
+    # num rounds of sampling
+    for _ in range(num_rounds):
+
+        # evaluate samples; store logits; evaluate pairwise value
+        for h in H:
+
+            q = q_template.format(h=h)
+
+            pairs = []
+            for _ in range(sample_size): # do this number of samples
+                sent_A = random.choice(pos)
+                sent_B = random.choice(neg)
+
+                pairs.append((sent_A, sent_B))
+
+            qc_dicts = []
+            for sent_A, sent_B in pairs:
+                sent_A, sent_B = resize(sent_A, sent_B, max_length)
+                c = 'sentence A: ' + sent_A + '\n\nsentence B: ' + sent_B
+                qc_dicts.append({'q': q, 'c': c})
+            positive_logits = m.get_logits_from_input_dict(qc_dicts, bsize=BSIZE)
+
+            qc_dicts = []
+            for sent_A, sent_B in pairs:
+                sent_A, sent_B = resize(sent_A, sent_B, max_length)
+                c = 'sentence A: ' + sent_B + '\n\nsentence B: ' + sent_A
+                qc_dicts.append({'q': q, 'c': c})
+            negative_logits = m.get_logits_from_input_dict(qc_dicts, bsize=BSIZE)
+
+            scores = np.array(positive_logits[:,1] - negative_logits[:,1])
+
+            h2result[h]['pairs'].extend(pairs)
+            h2result[h]['scores'].extend(scores)
+            h2result[h]['logits']['positive_logits'].extend(positive_logits)
+            h2result[h]['logits']['negative_logits'].extend(negative_logits)
+    
+        # conduct tukey
+        data = []
+        endog = []
+        groups = []
+
+        for h in H:
+            scores = h2result[h]['scores']
+            data.append(scores)
+            endog.extend(scores)
+            groups.extend([h] * len(scores))
+
+        result = f_oneway(*data)
+        if result.pvalue > ALPHA:
+            continue # if no significant differences this round
+        
+        tukey = pairwise_tukeyhsd(endog=endog,
+                        groups=groups,
+                        alpha=ALPHA)
+        
+        rejects = Counter()
+        for (h1, h2), meandiff, reject in zip(itertools.combinations(sorted(H), 2), tukey.meandiffs, tukey.reject):            
+            if reject:
+                if meandiff > 0: rejects[h1] += 1
+                if meandiff < 0: rejects[h2] += 1
+        
+        for h, count in rejects.items():
+            if count >= 5:
+                H.remove(h)
+
+    for h in h2result.keys():
+        h2result[h]['h_score'] = np.mean(h2result[h]['scores'])
+
+    return h2result
+
+
+def query_paired_fitness_controlled_(h, pos, neg, num_examples, m, max_length=128):
+    q = 'Is it true that compared to sentence B, sentence A ' + h + '?'
+    
+    pairs = []
+    for i in range(num_examples):
+        sent_A = random.choice(pos)
+        sent_B = random.choice(neg)
+        pairs.append((sent_A, sent_B))
+
+    qc_dicts = []
+    for sent_A, sent_B in pairs:
+        sent_A, sent_B = resize(sent_A, sent_B, max_length)
+        c = 'sentence A: ' + sent_A + '\n\nsentence B: ' + sent_B
+        qc_dicts.append({'q': q, 'c': c})
+    positive_logits = m.get_logits_from_input_dict(qc_dicts, bsize=BSIZE)
+    pos_score = np.mean((np.e ** positive_logits[:,1]) > 0.5)
+
+    qc_dicts = []
+
+    for sent_A, sent_B in pairs:
+        sent_A, sent_B = resize(sent_A, sent_B, max_length)
+        c = 'sentence A: ' + sent_B + '\n\nsentence B: ' + sent_A
+        qc_dicts.append({'q': q, 'c': c})
+    reverse_logits = m.get_logits_from_input_dict(qc_dicts, bsize=BSIZE)
+    reverse_score = np.mean((np.e ** reverse_logits[:,1]) > 0.5)
+    return {
+        'h_score': pos_score - reverse_score,
+        'h': h,
+        'dicts': pairs,
+        'logits': {
+            'positive_logits': positive_logits,
+            'reverse_logits': reverse_logits
+        }
+    }
+
+
 
 def query_paired_fitness_controlled_(h, pos, neg, num_examples, m, max_length=128):
     q = 'Is it true that compared to sentence B, sentence A ' + h + '?'
@@ -283,7 +411,11 @@ class DummyVerifier:
                                      max_seq_length=self.seq_length, half_precision=True)
         print('verifier loaded')
         self.description = 'Unifiedqa t5-large for debugging'
-    
+
+    def return_verification_active(self, proposed_hypotheses, pos, neg):
+        result = query_paired_fitness_controlled_active_(proposed_hypotheses, pos, neg, self.model, max_length=self.seq_length)
+        return result
+
     def return_verification(self, h, pos, neg, num_examples):
         result = query_paired_fitness_controlled_(h, pos, neg, num_examples, self.model, max_length=self.seq_length)
         return result
@@ -303,6 +435,10 @@ class Verifier0514:
         print('verifier loaded')
         self.description = 'Similar to Verifier 1207, though the fine-tuned on clean verification data'
     
+    def return_verification_active(self, proposed_hypotheses, pos, neg):
+        result = query_paired_fitness_controlled_active_(proposed_hypotheses, pos, neg, self.model, max_length=self.seq_length)
+        return result
+
     def return_verification(self, h, pos, neg, num_examples):
         result = query_paired_fitness_controlled_(h, pos, neg, num_examples, self.model, max_length=self.seq_length)
         return result
@@ -322,6 +458,10 @@ class UnifiedQASingle:
         print('verifier loaded')
         self.description = 'UnifiedQA evaluated on single hypotheses'
     
+    def return_verification_active(self, proposed_hypotheses, pos, neg):
+        result = query_paired_fitness_controlled_active_(proposed_hypotheses, pos, neg, self.model, max_length=self.seq_length)
+        return result
+
     def return_verification(self, h, pos, neg, num_examples):
         result = query_single_fitness_controlled_(h, pos, neg, num_examples, self.model)
         return result
@@ -341,6 +481,10 @@ class UnifiedQA_v2Single:
         print('verifier loaded')
         self.description = 'UnifiedQA-v2 evaluated on single hypotheses'
     
+    def return_verification_active(self, proposed_hypotheses, pos, neg):
+        result = query_paired_fitness_controlled_active_(proposed_hypotheses, pos, neg, self.model, max_length=self.seq_length)
+        return result
+
     def return_verification(self, h, pos, neg, num_examples):
         result = query_single_fitness_controlled_(h, pos, neg, num_examples, self.model)
         return result
@@ -360,6 +504,10 @@ class UnifiedQA_v2:
         print('verifier loaded')
         self.description = 'UnifiedQA-v2 evaluated on comparison hypotheses'
     
+    def return_verification_active(self, proposed_hypotheses, pos, neg):
+        result = query_paired_fitness_controlled_active_(proposed_hypotheses, pos, neg, self.model, max_length=self.seq_length)
+        return result
+
     def return_verification(self, h, pos, neg, num_examples):
         result = query_paired_fitness_controlled_(h, pos, neg, num_examples, self.model, max_length=self.seq_length)
         return result

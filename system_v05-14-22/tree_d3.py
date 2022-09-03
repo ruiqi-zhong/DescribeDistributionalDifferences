@@ -53,7 +53,7 @@ class Tree:
     def fit(self,
             pos: List[str], # a list of text samples from D_1
             neg: List[str], # a list of text samples from D_0
-            pair: str='', # name of the distribution
+            pair: str = '', # name of the distribution
             depth = 0,
             save_folder=None):
 
@@ -90,9 +90,7 @@ class Tree:
         pkl.dump(proposed_hypotheses, open(os.path.join(save_folder, 'proposed_hypotheses.pkl'), 'wb'))
         
         # verify the hypotheses
-        h2result = {}
-        for h in set(proposed_hypotheses):
-            h2result[h] = self.verifier.return_verification(h, pos, neg, 400)
+        h2result = self.verifier.return_verification_active(proposed_hypotheses, pos, neg)
         
         pkl.dump(h2result, open(os.path.join(save_folder, 'scored_hypotheses.pkl'), 'wb'))
         
