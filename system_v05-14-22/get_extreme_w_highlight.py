@@ -98,6 +98,7 @@ def get_spans(tok, text):
 
 
 def train_and_eval(cv_dict):
+
     max_length = 128
     train_data_dicts = list(chain(
         [{'input': x, 'label': 1} for x in cv_dict['train_pos']], 
@@ -123,6 +124,7 @@ def train_and_eval(cv_dict):
         labels = torch.tensor([d['label'] for d in train_data_dicts[:bsize]]).to(device)
         outputs = model(**inputs, labels=labels)
         loss = outputs['loss']
+        
         loss.backward()
         if step % 2 == 1:
             optimizer.step()

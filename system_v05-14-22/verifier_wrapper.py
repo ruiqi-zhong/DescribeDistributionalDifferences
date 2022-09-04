@@ -104,7 +104,7 @@ def resize(sent_A, sent_B, max_length):
     new_A, new_B = t5tok.decode(toks_A_new), t5tok.decode(toks_B_new)
     return new_A, new_B
 
-def query_paired_fitness_controlled_active_(H: List[str], pos: List[str], neg: List[str], m, sample_size = 10, num_rounds = 50, max_length = 128):
+def query_paired_fitness_controlled_active_(H: List[str], pos: List[str], neg: List[str], m, sample_size = 10, num_rounds = 50, max_length = 128, min_count = 3):
     """Efficent query of a set of hypotheses H"""
 
     q_template = 'Is it true that compared to sentence B, sentence A {h} ?'
@@ -152,7 +152,9 @@ def query_paired_fitness_controlled_active_(H: List[str], pos: List[str], neg: L
                 qc_dicts.append({'q': q, 'c': c})
             negative_logits = m.get_logits_from_input_dict(qc_dicts, bsize=BSIZE, progress_bar=False)
 
-            scores = np.array(positive_logits[:,1] - negative_logits[:,1])
+            positive_probs = 1/(1 + np.e ** positive_logits[:,1])
+            negative_probs = 1/(1 + np.e ** negative_logits[:,1])
+            scores = np.array(positive_probs - negative_probs)
 
             h2result[h]['pairs'].extend(pairs)
             h2result[h]['scores'].extend(scores)
@@ -185,7 +187,7 @@ def query_paired_fitness_controlled_active_(H: List[str], pos: List[str], neg: L
                 if meandiff < 0: rejects[h2] += 1
         
         for h, count in rejects.items():
-            if count >= 5:
+            if count >= min_count:
                 H.remove(h)
 
     for h in h2result.keys():
