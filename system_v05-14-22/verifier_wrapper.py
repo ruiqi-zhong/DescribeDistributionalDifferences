@@ -104,11 +104,11 @@ def resize(sent_A, sent_B, max_length):
     new_A, new_B = t5tok.decode(toks_A_new), t5tok.decode(toks_B_new)
     return new_A, new_B
 
-def query_paired_fitness_controlled_active_(H: List[str], pos: List[str], neg: List[str], m, sample_size = 10, num_rounds = 20, max_length = 128):
+def query_paired_fitness_controlled_active_(H: List[str], pos: List[str], neg: List[str], m, sample_size = 10, num_rounds = 50, max_length = 128):
     """Efficent query of a set of hypotheses H"""
 
     q_template = 'Is it true that compared to sentence B, sentence A {h} ?'
-    ALPHA = 5e-3
+    ALPHA = 1e-2
 
     # set up hypotheses
     h2result = {h:
