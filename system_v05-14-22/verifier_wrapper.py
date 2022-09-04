@@ -127,7 +127,7 @@ def query_paired_fitness_controlled_active_(H: List[str], pos: List[str], neg: L
         print(f'num hypotheses: {len(H)}')
 
         # evaluate samples; store logits; evaluate pairwise value
-        for h in H:
+        for h in tqdm.tqdm(H):
 
             q = q_template.format(h=h)
 
@@ -143,14 +143,14 @@ def query_paired_fitness_controlled_active_(H: List[str], pos: List[str], neg: L
                 sent_A, sent_B = resize(sent_A, sent_B, max_length)
                 c = 'sentence A: ' + sent_A + '\n\nsentence B: ' + sent_B
                 qc_dicts.append({'q': q, 'c': c})
-            positive_logits = m.get_logits_from_input_dict(qc_dicts, bsize=BSIZE)
+            positive_logits = m.get_logits_from_input_dict(qc_dicts, bsize=BSIZE, progress_bar=False)
 
             qc_dicts = []
             for sent_A, sent_B in pairs:
                 sent_A, sent_B = resize(sent_A, sent_B, max_length)
                 c = 'sentence A: ' + sent_B + '\n\nsentence B: ' + sent_A
                 qc_dicts.append({'q': q, 'c': c})
-            negative_logits = m.get_logits_from_input_dict(qc_dicts, bsize=BSIZE)
+            negative_logits = m.get_logits_from_input_dict(qc_dicts, bsize=BSIZE, progress_bar=False)
 
             scores = np.array(positive_logits[:,1] - negative_logits[:,1])
 
@@ -318,8 +318,8 @@ def split_paired_fitness_controlled_(h, pos, neg, m):
             rev_c = 'sentence A: ' + sent_B + '\n\nsentence B: ' + sent_A
             rev_qc_dicts.append({'q': q, 'c': rev_c})
         
-        reg_logits = m.get_logits_from_input_dict(reg_qc_dicts, bsize=BSIZE)
-        rev_logits = m.get_logits_from_input_dict(rev_qc_dicts, bsize=BSIZE)
+        reg_logits = m.get_logits_from_input_dict(reg_qc_dicts, bsize=BSIZE, progress_bar=False)
+        rev_logits = m.get_logits_from_input_dict(rev_qc_dicts, bsize=BSIZE, progress_bar=False)
 
         net_logits = reg_logits[:,1] - rev_logits[:,1]
         comparisons = (np.e ** net_logits) > 0.5
@@ -340,7 +340,7 @@ def split_paired_fitness_controlled_(h, pos, neg, m):
     top_half = []
     bottom_half = []
 
-    for depth in range(1, MAX_DEPTH+1):
+    for depth in tqdm.tqdm(range(1, MAX_DEPTH+1)):
         dists[depth] = {}
         for record, dist_to_split in dists[depth-1].items():
             
