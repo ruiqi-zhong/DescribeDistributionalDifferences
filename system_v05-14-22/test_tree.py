@@ -3,7 +3,7 @@ import json
 
 if __name__ == '__main__':
     dists = json.load(open('../benchmark_sec_4/benchmark_ss.json'))
-    for d in dists[21:25]:
+    for d in dists[22:25]:
         pos = d['positive_samples']
         neg = d['negative_samples']
         pair = d['pair']
