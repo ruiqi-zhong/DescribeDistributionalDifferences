@@ -22,6 +22,10 @@ if device_count == 4:
     BSIZE = 4
 t5tok = AutoTokenizer.from_pretrained('t5-small')
 
+SINGLE_QUESTION_TEMPLATE =  'Is it true that this snippet {h}?'
+SINGLE_CONTEXT_TEMPLATE = 'snippet: {sent}'
+PAIRED_QUESTION_TEMPLATE = 'Is it true that compared to snippet B, snippet A {h} ?'
+PAIRED_CONTEXT_TEMPLATE = 'snippet A: {sent_A}\n\nsnippet B: {sent_B}'
 
 def normalize(t):
     return re.sub("'(.+)'", r'\1', t.lower())
@@ -104,10 +108,9 @@ def resize(sent_A, sent_B, max_length):
     new_A, new_B = t5tok.decode(toks_A_new), t5tok.decode(toks_B_new)
     return new_A, new_B
 
-def query_paired_fitness_controlled_active_(H: List[str], pos: List[str], neg: List[str], m, sample_size = 50, num_rounds = 20, max_length = 128, min_count = 3):
+def query_single_fitness_controlled_active_(H: List[str], pos: List[str], neg: List[str], m, sample_size = 50, num_rounds = 20, max_length = 128, min_count = 3):
     """Efficent query of a set of hypotheses H"""
 
-    q_template = 'Is it true that compared to sentence B, sentence A {h} ?'
     ALPHA = 5e-1
 
     # set up hypotheses
@@ -129,26 +132,25 @@ def query_paired_fitness_controlled_active_(H: List[str], pos: List[str], neg: L
         # evaluate samples; store logits; evaluate pairwise value
         for h in tqdm.tqdm(H):
 
-            q = q_template.format(h=h)
+            q = SINGLE_QUESTION_TEMPLATE.format(h=h)
 
-            pairs = []
+            pos_samples, neg_samples, pairs = [], [], []
             for _ in range(sample_size): # do this number of samples
                 sent_A = random.choice(pos)
                 sent_B = random.choice(neg)
 
+                pos_samples.append(sent_A)
+                neg_samples.append(sent_B)
                 pairs.append((sent_A, sent_B))
 
             qc_dicts = []
-            for sent_A, sent_B in pairs:
-                sent_A, sent_B = resize(sent_A, sent_B, max_length)
-                c = 'sentence A: ' + sent_A + '\n\nsentence B: ' + sent_B
+            for sent in pos_samples:
+                c = SINGLE_CONTEXT_TEMPLATE.format(sent=sent)
                 qc_dicts.append({'q': q, 'c': c})
             positive_logits = m.get_logits_from_input_dict(qc_dicts, bsize=BSIZE, progress_bar=False)
-
-            qc_dicts = []
-            for sent_A, sent_B in pairs:
-                sent_A, sent_B = resize(sent_A, sent_B, max_length)
-                c = 'sentence A: ' + sent_B + '\n\nsentence B: ' + sent_A
+            
+            for sent in neg_samples:
+                c = SINGLE_CONTEXT_TEMPLATE.format(sent=sent)
                 qc_dicts.append({'q': q, 'c': c})
             negative_logits = m.get_logits_from_input_dict(qc_dicts, bsize=BSIZE, progress_bar=False)
 
@@ -196,8 +198,98 @@ def query_paired_fitness_controlled_active_(H: List[str], pos: List[str], neg: L
     return h2result
 
 
+def query_paired_fitness_controlled_active_(H: List[str], pos: List[str], neg: List[str], m, sample_size = 50, num_rounds = 20, max_length = 128, min_count = 3):
+    """Efficent query of a set of hypotheses H"""
+
+    ALPHA = 5e-1
+
+    # set up hypotheses
+    h2result = {h:
+        {'h':h,
+        'pairs':[],
+        'scores':[],
+        'logits':{
+            'positive_logits':[],
+            'negative_logits':[]}}
+            for h in H}
+    
+    # num rounds of sampling
+    for i in range(num_rounds):
+        
+        print(f'round: {i}')
+        print(f'num hypotheses: {len(H)}')
+
+        # evaluate samples; store logits; evaluate pairwise value
+        for h in tqdm.tqdm(H):
+
+            q = PAIRED_QUESTION_TEMPLATE.format(h=h)
+
+            pairs = []
+            for _ in range(sample_size): # do this number of samples
+                sent_A = random.choice(pos)
+                sent_B = random.choice(neg)
+
+                pairs.append((sent_A, sent_B))
+
+            qc_dicts = []
+            for sent_A, sent_B in pairs:
+                sent_A, sent_B = resize(sent_A, sent_B, max_length)
+                c = PAIRED_CONTEXT_TEMPLATE.format(sent_A=sent_A, sent_B=sent_B)
+                qc_dicts.append({'q': q, 'c': c})
+            positive_logits = m.get_logits_from_input_dict(qc_dicts, bsize=BSIZE, progress_bar=False)
+
+            qc_dicts = []
+            for sent_A, sent_B in pairs:
+                sent_A, sent_B = resize(sent_A, sent_B, max_length)
+                c = PAIRED_CONTEXT_TEMPLATE.format(sent_A=sent_A, sent_B=sent_B)
+                qc_dicts.append({'q': q, 'c': c})
+            negative_logits = m.get_logits_from_input_dict(qc_dicts, bsize=BSIZE, progress_bar=False)
+
+            positive_probs = 1/(1 + np.e ** positive_logits[:,1])
+            negative_probs = 1/(1 + np.e ** negative_logits[:,1])
+            scores = np.array(positive_probs - negative_probs)
+
+            h2result[h]['pairs'].extend(pairs)
+            h2result[h]['scores'].extend(scores)
+            h2result[h]['logits']['positive_logits'].extend(positive_logits)
+            h2result[h]['logits']['negative_logits'].extend(negative_logits)
+    
+        # conduct tukey
+        data = []
+        endog = []
+        groups = []
+
+        for h in H:
+            scores = h2result[h]['scores']
+            data.append(scores)
+            endog.extend(scores)
+            groups.extend([h] * len(scores))
+
+        result = f_oneway(*data)
+        if result.pvalue > ALPHA:
+            continue # if no significant differences this round
+        
+        tukey = pairwise_tukeyhsd(endog=endog,
+                        groups=groups,
+                        alpha=ALPHA)
+        
+        rejects = Counter()
+        for (h1, h2), meandiff, reject in zip(itertools.combinations(sorted(H), 2), tukey.meandiffs, tukey.reject):            
+            if reject:
+                if meandiff > 0: rejects[h1] += 1
+                if meandiff < 0: rejects[h2] += 1
+        
+        for h, count in rejects.items():
+            if count >= min_count:
+                H.remove(h)
+
+    for h in h2result.keys():
+        h2result[h]['h_score'] = np.mean(h2result[h]['scores'])
+
+    return h2result
+
 def query_paired_fitness_controlled_(h, pos, neg, num_examples, m, max_length=128):
-    q = 'Is it true that compared to sentence B, sentence A ' + h + '?'
+    q = PAIRED_QUESTION_TEMPLATE.format(h=h)
     
     pairs = []
     for i in range(num_examples):
@@ -208,7 +300,7 @@ def query_paired_fitness_controlled_(h, pos, neg, num_examples, m, max_length=12
     qc_dicts = []
     for sent_A, sent_B in pairs:
         sent_A, sent_B = resize(sent_A, sent_B, max_length)
-        c = 'sentence A: ' + sent_A + '\n\nsentence B: ' + sent_B
+        c = PAIRED_CONTEXT_TEMPLATE.format(sent_A=sent_A, sent_B=sent_B)
         qc_dicts.append({'q': q, 'c': c})
     positive_logits = m.get_logits_from_input_dict(qc_dicts, bsize=BSIZE)
     pos_score = np.mean((np.e ** positive_logits[:,1]) > 0.5)
@@ -217,7 +309,7 @@ def query_paired_fitness_controlled_(h, pos, neg, num_examples, m, max_length=12
 
     for sent_A, sent_B in pairs:
         sent_A, sent_B = resize(sent_A, sent_B, max_length)
-        c = 'sentence A: ' + sent_B + '\n\nsentence B: ' + sent_A
+        c = PAIRED_CONTEXT_TEMPLATE.format(sent_A=sent_A, sent_B=sent_B)
         qc_dicts.append({'q': q, 'c': c})
     reverse_logits = m.get_logits_from_input_dict(qc_dicts, bsize=BSIZE)
     reverse_score = np.mean((np.e ** reverse_logits[:,1]) > 0.5)
@@ -231,10 +323,8 @@ def query_paired_fitness_controlled_(h, pos, neg, num_examples, m, max_length=12
         }
     }
 
-
-
 def query_paired_fitness_controlled_(h, pos, neg, num_examples, m, max_length=128):
-    q = 'Is it true that compared to sentence B, sentence A ' + h + '?'
+    q = PAIRED_QUESTION_TEMPLATE.format(h=h)
     
     pairs = []
     for i in range(num_examples):
@@ -245,7 +335,7 @@ def query_paired_fitness_controlled_(h, pos, neg, num_examples, m, max_length=12
     qc_dicts = []
     for sent_A, sent_B in pairs:
         sent_A, sent_B = resize(sent_A, sent_B, max_length)
-        c = 'sentence A: ' + sent_A + '\n\nsentence B: ' + sent_B
+        c = PAIRED_CONTEXT_TEMPLATE.format(sent_A=sent_A, sent_B=sent_B)
         qc_dicts.append({'q': q, 'c': c})
     positive_logits = m.get_logits_from_input_dict(qc_dicts, bsize=BSIZE)
     pos_score = np.mean((np.e ** positive_logits[:,1]) > 0.5)
@@ -254,7 +344,7 @@ def query_paired_fitness_controlled_(h, pos, neg, num_examples, m, max_length=12
 
     for sent_A, sent_B in pairs:
         sent_A, sent_B = resize(sent_A, sent_B, max_length)
-        c = 'sentence A: ' + sent_B + '\n\nsentence B: ' + sent_A
+        c = PAIRED_CONTEXT_TEMPLATE.format(sent_A=sent_A, sent_B=sent_B)
         qc_dicts.append({'q': q, 'c': c})
     reverse_logits = m.get_logits_from_input_dict(qc_dicts, bsize=BSIZE)
     reverse_score = np.mean((np.e ** reverse_logits[:,1]) > 0.5)
@@ -275,11 +365,11 @@ def query_single_fitness_controlled_(h, pos, neg, num_examples, m):
     random.shuffle(neg)
     
     pos_examples = pos[:num_examples]
-    qc_dicts = [{'q': q, 'c': s} for s in pos_examples]
+    qc_dicts = [{'q': q, 'c': SINGLE_CONTEXT_TEMPLATE.format(sent=sent)} for sent in pos_examples]
     pos_logits = m.get_logits_from_input_dict(qc_dicts, bsize=BSIZE)[:,1]
     
     neg_examples =  neg[:num_examples]
-    qc_dicts = [{'q': q, 'c': s} for s in neg_examples]
+    qc_dicts = [{'q': q, 'c': SINGLE_CONTEXT_TEMPLATE.format(sent=sent)} for sent in neg_examples]
     neg_logits = m.get_logits_from_input_dict(qc_dicts, bsize=BSIZE)[:,1]
     
     pos_score = np.mean((np.e ** pos_logits) > 0.5)
@@ -303,7 +393,7 @@ def split_paired_fitness_controlled_(h, pos, neg, m):
     p_file = open(f'sampling/prefixes_{CONFIDENCE}.json', 'r')
     prefixes = json.loads(p_file.read())
 
-    q = 'Is it true that compared to sentence B, sentence A ' + h + '?'
+    q = PAIRED_QUESTION_TEMPLATE.format(h=h)
     
     def split(samples, max_length=128):
         """Splits the samples into the top and bottom halves."""
@@ -315,9 +405,9 @@ def split_paired_fitness_controlled_(h, pos, neg, m):
             if not sent_B: # in case odd
                 sent_B = samples[0] # pick random sample
             resize(sent_A, sent_B, max_length)
-            reg_c = 'sentence A: ' + sent_A + '\n\nsentence B: ' + sent_B
+            reg_c = PAIRED_CONTEXT_TEMPLATE.format(sent_A=sent_A, sent_B=sent_B)
             reg_qc_dicts.append({'q': q, 'c': reg_c})
-            rev_c = 'sentence A: ' + sent_B + '\n\nsentence B: ' + sent_A
+            rev_c = PAIRED_CONTEXT_TEMPLATE.format(sent_A=sent_B, sent_B=sent_A)
             rev_qc_dicts.append({'q': q, 'c': rev_c})
         
         reg_logits = m.get_logits_from_input_dict(reg_qc_dicts, bsize=BSIZE, progress_bar=False)
@@ -379,17 +469,17 @@ def split_paired_fitness_controlled_(h, pos, neg, m):
     }
 
 def split_single_fitness_controlled_(h, pos, neg, m):
-    q = 'Is it true that this sentence ' + h + '?'
+    q = 'Is it true that the text snippet ' + h + '?'
     pos = list(pos)
     neg = list(neg)
 
-    qc_dicts = [{'q': q, 'c': s} for s in pos]
+    qc_dicts = [{'q': q, 'c': SINGLE_CONTEXT_TEMPLATE.format(sent=sent)} for sent in pos]
     logits = m.get_logits_from_input_dict(qc_dicts, bsize=BSIZE)[:,1]
     
     pos_pos = np.array(pos)[((np.e ** logits) > 0.5).astype(int)]
     pos_neg = np.array(pos)[((np.e ** logits) <= 0.5).astype(int)]
 
-    qc_dicts = [{'q': q, 'c': s} for s in neg]
+    qc_dicts = [{'q': q,'c': SINGLE_CONTEXT_TEMPLATE.format(sent=sent)} for sent in neg]
     logits = m.get_logits_from_input_dict(qc_dicts, bsize=BSIZE)[:,1]
     
     neg_pos = np.array(neg)[((np.e ** logits) > 0.5).astype(int)]
@@ -403,8 +493,6 @@ def split_single_fitness_controlled_(h, pos, neg, m):
         'neg_neg':neg_neg.tolist(),
         'logits':logits,
     }
-
-    
 
 
 class DummyVerifier:
@@ -464,7 +552,7 @@ class UnifiedQASingle:
         self.description = 'UnifiedQA evaluated on single hypotheses'
     
     def return_verification_active(self, proposed_hypotheses, pos, neg):
-        result = query_paired_fitness_controlled_active_(proposed_hypotheses, pos, neg, self.model, max_length=self.seq_length)
+        result = query_single_fitness_controlled_active_(proposed_hypotheses, pos, neg, self.model, max_length=self.seq_length)
         return result
 
     def return_verification(self, h, pos, neg, num_examples):
@@ -472,7 +560,7 @@ class UnifiedQASingle:
         return result
     
     def return_split(self, h, pos, neg):
-        result = split_paired_fitness_controlled_(h, pos, neg, self.model)
+        result = split_single_fitness_controlled_(h, pos, neg, self.model)
         return result
 
 class UnifiedQA_v2Single:
@@ -487,7 +575,7 @@ class UnifiedQA_v2Single:
         self.description = 'UnifiedQA-v2 evaluated on single hypotheses'
     
     def return_verification_active(self, proposed_hypotheses, pos, neg):
-        result = query_paired_fitness_controlled_active_(proposed_hypotheses, pos, neg, self.model, max_length=self.seq_length)
+        result = query_single_fitness_controlled_active_(proposed_hypotheses, pos, neg, self.model, max_length=self.seq_length)
         return result
 
     def return_verification(self, h, pos, neg, num_examples):
@@ -495,7 +583,7 @@ class UnifiedQA_v2Single:
         return result
     
     def return_split(self, h, pos, neg):
-        result = split_paired_fitness_controlled_(h, pos, neg, self.model)
+        result = split_single_fitness_controlled_(h, pos, neg, self.model)
         return result
 
 class UnifiedQA_v2:
