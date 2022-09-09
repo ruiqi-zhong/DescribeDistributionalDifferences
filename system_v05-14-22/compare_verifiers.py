@@ -7,6 +7,7 @@ from verifier_wrapper import init_verifier
 import json
 from typing import List
 from datetime import datetime
+import tqdm
 
 def describe(pos: List[str], # a list of text samples from D_1
              neg: List[str], # a list of text samples from D_0
