@@ -57,14 +57,16 @@ def describe(pos: List[str], # a list of text samples from D_1
 
     # verify the hypotheses
     h2result_active = verifier.return_verification_active(proposed_hypotheses, pos, neg)
-    
-    pkl.dump(h2result_standard, open(os.path.join(save_folder, 'scored_hypotheses.pkl'), 'wb'))
+
+    pkl.dump(h2result_standard, open(os.path.join(save_folder, 'standard_scored_hypotheses.pkl'), 'wb'))
+    pkl.dump(h2result_active, open(os.path.join(save_folder, 'active_scored_hypotheses.pkl'), 'wb'))
 
 
 if __name__ == '__main__':
     distribution_pairs = json.load(open('../benchmark_sec_4/benchmark.json'))
-    
-    d = distribution_pairs[0]
 
-    describe(pos=d['positive_samples'], 
-                            neg=d['negative_samples'])
+    for i, d in enumerate(tqdm.tqdm(distribution_pairs)):
+
+        describe(pos=d['positive_samples'], 
+                neg=d['negative_samples'],
+                note='benchmark %d; can be anything, for logging purpose only' % i)
