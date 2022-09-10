@@ -17,9 +17,10 @@ import itertools
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 max_seq_length = 128
 device_count = torch.cuda.device_count()
-BSIZE = 2
+BSIZE = 1
 if device_count == 4:
     BSIZE = 4
+
 t5tok = AutoTokenizer.from_pretrained('t5-small')
 
 SINGLE_QUESTION_TEMPLATE =  'Is it true that this snippet {h}?'
