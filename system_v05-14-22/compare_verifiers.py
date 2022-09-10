@@ -59,6 +59,9 @@ def describe(pos: List[str], # a list of text samples from D_1
     # verify the hypotheses
     h2result_active = verifier.return_verification_active(proposed_hypotheses, pos, neg)
 
+    print(h2result_standard)
+    print(h2result_active)
+
     pkl.dump(h2result_standard, open(os.path.join(save_folder, 'standard_scored_hypotheses.pkl'), 'wb'))
     pkl.dump(h2result_active, open(os.path.join(save_folder, 'active_scored_hypotheses.pkl'), 'wb'))
 
