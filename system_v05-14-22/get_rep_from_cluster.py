@@ -25,7 +25,12 @@ def get_rep(
         print("Folder %s exists" % save_folder)
 
     # get samples that are representative of the differences between two distributions
-    eval_only(pos, neg, True, pathname=os.path.join(save_folder, "shap_result.json"))
+    # eval_only(pos, neg, True, pathname=os.path.join(save_folder, "shap_result.json"))
+    extreme_vals = return_extreme_values(pos, neg, use_shap=True)
+    with open(os.path.join(save_folder, "shap_result.json"), "w") as f:
+        out = json.dumps(extreme_vals, indent=4)
+        f.write(out)
+
     # extreme_vals = return_extreme_values(pos, neg, False)
     # pkl.dump(
     #     extreme_vals, open(os.path.join(save_folder, "get_extreme_result.pkl"), "wb")
@@ -46,7 +51,7 @@ if __name__ == "__main__":
 
         d0, d1 = clusters[d0_index], clusters[d1_index]
         # try:
-        get_rep(pos=d0, neg=d1, pair="shap-" + str(i))
+        get_rep(pos=d0, neg=d1, pair="shap-cluster-" + str(i))
         # except Exception as e:
         #     print("error: ", e)
         #     continue
