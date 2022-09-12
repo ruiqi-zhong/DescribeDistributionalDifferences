@@ -242,7 +242,7 @@ def query_paired_fitness_controlled_active_(H: List[str], pos: List[str], neg: L
             qc_dicts = []
             for sent_A, sent_B in pairs:
                 sent_A, sent_B = resize(sent_A, sent_B, max_length)
-                c = PAIRED_CONTEXT_TEMPLATE.format(sent_A=sent_A, sent_B=sent_B)
+                c = PAIRED_CONTEXT_TEMPLATE.format(sent_A=sent_B, sent_B=sent_A)
                 qc_dicts.append({'q': q, 'c': c})
             negative_logits = m.get_logits_from_input_dict(qc_dicts, bsize=BSIZE, progress_bar=False)
 
@@ -288,76 +288,6 @@ def query_paired_fitness_controlled_active_(H: List[str], pos: List[str], neg: L
         h2result[h]['h_score'] = np.mean(h2result[h]['scores'])
 
     return h2result
-
-def query_paired_fitness_controlled_(h, pos, neg, num_examples, m, max_length=128):
-    q = PAIRED_QUESTION_TEMPLATE.format(h=h)
-    
-    pairs = []
-    for i in range(num_examples):
-        sent_A = random.choice(pos)
-        sent_B = random.choice(neg)
-        pairs.append((sent_A, sent_B))
-
-    qc_dicts = []
-    for sent_A, sent_B in pairs:
-        sent_A, sent_B = resize(sent_A, sent_B, max_length)
-        c = PAIRED_CONTEXT_TEMPLATE.format(sent_A=sent_A, sent_B=sent_B)
-        qc_dicts.append({'q': q, 'c': c})
-    positive_logits = m.get_logits_from_input_dict(qc_dicts, bsize=BSIZE)
-    pos_score = np.mean((np.e ** positive_logits[:,1]) > 0.5)
-
-    qc_dicts = []
-
-    for sent_A, sent_B in pairs:
-        sent_A, sent_B = resize(sent_A, sent_B, max_length)
-        c = PAIRED_CONTEXT_TEMPLATE.format(sent_A=sent_A, sent_B=sent_B)
-        qc_dicts.append({'q': q, 'c': c})
-    reverse_logits = m.get_logits_from_input_dict(qc_dicts, bsize=BSIZE)
-    reverse_score = np.mean((np.e ** reverse_logits[:,1]) > 0.5)
-    return {
-        'h_score': pos_score - reverse_score,
-        'h': h,
-        'dicts': pairs,
-        'logits': {
-            'positive_logits': positive_logits,
-            'reverse_logits': reverse_logits
-        }
-    }
-
-def query_paired_fitness_controlled_(h, pos, neg, num_examples, m, max_length=128):
-    q = PAIRED_QUESTION_TEMPLATE.format(h=h)
-    
-    pairs = []
-    for i in range(num_examples):
-        sent_A = random.choice(pos)
-        sent_B = random.choice(neg)
-        pairs.append((sent_A, sent_B))
-
-    qc_dicts = []
-    for sent_A, sent_B in pairs:
-        sent_A, sent_B = resize(sent_A, sent_B, max_length)
-        c = PAIRED_CONTEXT_TEMPLATE.format(sent_A=sent_A, sent_B=sent_B)
-        qc_dicts.append({'q': q, 'c': c})
-    positive_logits = m.get_logits_from_input_dict(qc_dicts, bsize=BSIZE)
-    pos_score = np.mean((np.e ** positive_logits[:,1]) > 0.5)
-
-    qc_dicts = []
-
-    for sent_A, sent_B in pairs:
-        sent_A, sent_B = resize(sent_A, sent_B, max_length)
-        c = PAIRED_CONTEXT_TEMPLATE.format(sent_A=sent_A, sent_B=sent_B)
-        qc_dicts.append({'q': q, 'c': c})
-    reverse_logits = m.get_logits_from_input_dict(qc_dicts, bsize=BSIZE)
-    reverse_score = np.mean((np.e ** reverse_logits[:,1]) > 0.5)
-    return {
-        'h_score': pos_score - reverse_score,
-        'h': h,
-        'dicts': pairs,
-        'logits': {
-            'positive_logits': positive_logits,
-            'reverse_logits': reverse_logits
-        }
-    }
     
 def query_single_fitness_controlled_(h, pos, neg, num_examples, m):
     q = 'Is it true that this sentence ' + h + '?'
@@ -384,6 +314,67 @@ def query_single_fitness_controlled_(h, pos, neg, num_examples, m):
             'pos_logits': pos_logits,
             'neg_logits': neg_logits
         }
+    }
+
+def query_paired_fitness_controlled_(h, pos, neg, num_examples, m, max_length=128):
+    q = PAIRED_QUESTION_TEMPLATE.format(h=h)
+    
+    pairs = []
+    for i in range(num_examples):
+        sent_A = random.choice(pos)
+        sent_B = random.choice(neg)
+        pairs.append((sent_A, sent_B))
+
+    qc_dicts = []
+    for sent_A, sent_B in pairs:
+        sent_A, sent_B = resize(sent_A, sent_B, max_length)
+        c = PAIRED_CONTEXT_TEMPLATE.format(sent_A=sent_A, sent_B=sent_B)
+        qc_dicts.append({'q': q, 'c': c})
+    positive_logits = m.get_logits_from_input_dict(qc_dicts, bsize=BSIZE)
+    pos_score = np.mean((np.e ** positive_logits[:,1]) > 0.5)
+
+    qc_dicts = []
+
+    for sent_A, sent_B in pairs:
+        sent_A, sent_B = resize(sent_A, sent_B, max_length)
+        c = PAIRED_CONTEXT_TEMPLATE.format(sent_A=sent_B, sent_B=sent_A)
+        qc_dicts.append({'q': q, 'c': c})
+    reverse_logits = m.get_logits_from_input_dict(qc_dicts, bsize=BSIZE)
+    reverse_score = np.mean((np.e ** reverse_logits[:,1]) > 0.5)
+    return {
+        'h_score': pos_score - reverse_score,
+        'h': h,
+        'dicts': pairs,
+        'logits': {
+            'positive_logits': positive_logits,
+            'reverse_logits': reverse_logits
+        }
+    }
+
+def split_single_fitness_controlled_(h, pos, neg, m):
+    q = 'Is it true that the text snippet ' + h + '?'
+    pos = list(pos)
+    neg = list(neg)
+
+    qc_dicts = [{'q': q, 'c': SINGLE_CONTEXT_TEMPLATE.format(sent=sent)} for sent in pos]
+    logits = m.get_logits_from_input_dict(qc_dicts, bsize=BSIZE)[:,1]
+    
+    pos_pos = np.array(pos)[((np.e ** logits) > 0.5).astype(int)]
+    pos_neg = np.array(pos)[((np.e ** logits) <= 0.5).astype(int)]
+
+    qc_dicts = [{'q': q,'c': SINGLE_CONTEXT_TEMPLATE.format(sent=sent)} for sent in neg]
+    logits = m.get_logits_from_input_dict(qc_dicts, bsize=BSIZE)[:,1]
+    
+    neg_pos = np.array(neg)[((np.e ** logits) > 0.5).astype(int)]
+    neg_neg = np.array(neg)[((np.e ** logits) <= 0.5).astype(int)]
+
+    return {
+        'h': h,
+        'pos_pos':pos_pos.tolist(),
+        'pos_neg':pos_neg.tolist(),
+        'neg_pos':neg_pos.tolist(),
+        'neg_neg':neg_neg.tolist(),
+        'logits':logits,
     }
 
 def split_paired_fitness_controlled_(h, pos, neg, m):
@@ -468,33 +459,6 @@ def split_paired_fitness_controlled_(h, pos, neg, m):
         'neg_pos':neg_pos,
         'neg_neg':neg_neg,
     }
-
-def split_single_fitness_controlled_(h, pos, neg, m):
-    q = 'Is it true that the text snippet ' + h + '?'
-    pos = list(pos)
-    neg = list(neg)
-
-    qc_dicts = [{'q': q, 'c': SINGLE_CONTEXT_TEMPLATE.format(sent=sent)} for sent in pos]
-    logits = m.get_logits_from_input_dict(qc_dicts, bsize=BSIZE)[:,1]
-    
-    pos_pos = np.array(pos)[((np.e ** logits) > 0.5).astype(int)]
-    pos_neg = np.array(pos)[((np.e ** logits) <= 0.5).astype(int)]
-
-    qc_dicts = [{'q': q,'c': SINGLE_CONTEXT_TEMPLATE.format(sent=sent)} for sent in neg]
-    logits = m.get_logits_from_input_dict(qc_dicts, bsize=BSIZE)[:,1]
-    
-    neg_pos = np.array(neg)[((np.e ** logits) > 0.5).astype(int)]
-    neg_neg = np.array(neg)[((np.e ** logits) <= 0.5).astype(int)]
-
-    return {
-        'h': h,
-        'pos_pos':pos_pos.tolist(),
-        'pos_neg':pos_neg.tolist(),
-        'neg_pos':neg_pos.tolist(),
-        'neg_neg':neg_neg.tolist(),
-        'logits':logits,
-    }
-
 
 class DummyVerifier:
 
