@@ -155,9 +155,9 @@ def query_single_fitness_controlled_active_(H: List[str], pos: List[str], neg: L
                 qc_dicts.append({'q': q, 'c': c})
             negative_logits = m.get_logits_from_input_dict(qc_dicts, bsize=BSIZE, progress_bar=False)
 
-            positive_probs = 1/(1 + np.e ** positive_logits[:,1])
-            negative_probs = 1/(1 + np.e ** negative_logits[:,1])
-            scores = np.array(positive_probs - negative_probs)
+            positive_probs = np.e ** positive_logits[:,1]
+            negative_probs = np.e ** negative_logits[:,1]
+            scores = positive_probs - negative_probs
 
             h2result[h]['pairs'].extend(pairs)
             h2result[h]['scores'].extend(scores)
@@ -170,7 +170,7 @@ def query_single_fitness_controlled_active_(H: List[str], pos: List[str], neg: L
         groups = []
 
         for h in H:
-            scores = h2result[h]['scores']
+            scores = np.copy(h2result[h]['scores'])
             data.append(scores)
             endog.extend(scores)
             groups.extend([h] * len(scores))
@@ -202,7 +202,7 @@ def query_single_fitness_controlled_active_(H: List[str], pos: List[str], neg: L
 def query_paired_fitness_controlled_active_(H: List[str], pos: List[str], neg: List[str], m, sample_size = 50, num_rounds = 20, max_length = 128, min_count = 3):
     """Efficent query of a set of hypotheses H"""
 
-    ALPHA = 1e-1
+    ALPHA = 1e-3
 
     # set up hypotheses
     h2result = {h:
@@ -248,7 +248,7 @@ def query_paired_fitness_controlled_active_(H: List[str], pos: List[str], neg: L
 
             positive_probs = np.e ** positive_logits[:,1]
             negative_probs = np.e ** negative_logits[:,1]
-            scores = np.array(positive_probs - negative_probs)
+            scores = positive_probs - negative_probs
 
             h2result[h]['pairs'].extend(pairs)
             h2result[h]['scores'].extend(scores)
@@ -261,7 +261,7 @@ def query_paired_fitness_controlled_active_(H: List[str], pos: List[str], neg: L
         groups = []
 
         for h in H:
-            scores = h2result[h]['scores']
+            scores = np.copy(h2result[h]['scores'])
             data.append(scores)
             endog.extend(scores)
             groups.extend([h] * len(scores))
