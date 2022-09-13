@@ -155,9 +155,9 @@ def query_single_fitness_controlled_active_(H: List[str], pos: List[str], neg: L
                 qc_dicts.append({'q': q, 'c': c})
             negative_logits = m.get_logits_from_input_dict(qc_dicts, bsize=BSIZE, progress_bar=False)
 
-            positive_probs = np.e ** positive_logits[:,1]
-            negative_probs = np.e ** negative_logits[:,1]
-            scores = positive_probs - negative_probs
+            pos_score = np.mean((np.e ** positive_logits) > 0.5)
+            neg_score = np.mean((np.e ** negative_logits) > 0.5)
+            scores = pos_score - neg_score
 
             h2result[h]['pairs'].extend(pairs)
             h2result[h]['scores'].extend(scores)
@@ -246,9 +246,9 @@ def query_paired_fitness_controlled_active_(H: List[str], pos: List[str], neg: L
                 qc_dicts.append({'q': q, 'c': c})
             negative_logits = m.get_logits_from_input_dict(qc_dicts, bsize=BSIZE, progress_bar=False)
 
-            positive_probs = np.e ** positive_logits[:,1]
-            negative_probs = np.e ** negative_logits[:,1]
-            scores = positive_probs - negative_probs
+            pos_score = np.mean((np.e ** positive_logits) > 0.5)
+            neg_score = np.mean((np.e ** negative_logits) > 0.5)
+            scores = pos_score - neg_score
 
             h2result[h]['pairs'].extend(pairs)
             h2result[h]['scores'].extend(scores)
