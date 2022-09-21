@@ -109,10 +109,8 @@ def resize(sent_A, sent_B, max_length):
     new_A, new_B = t5tok.decode(toks_A_new), t5tok.decode(toks_B_new)
     return new_A, new_B
 
-def query_single_fitness_controlled_active_(H: List[str], pos: List[str], neg: List[str], m, sample_size = 50, num_rounds = 20, max_length = 128, min_count = 3):
+def query_single_fitness_controlled_active_(H: List[str], pos: List[str], neg: List[str], m, sample_size = 50, num_rounds = 20, max_length = 128, min_count = 3, alpha = 1e-3):
     """Efficent query of a set of single hypotheses H"""
-
-    ALPHA = 5e-1
 
     # set up hypotheses
     h2result = {h:
@@ -176,15 +174,15 @@ def query_single_fitness_controlled_active_(H: List[str], pos: List[str], neg: L
             groups.extend([h] * len(scores))
 
         result = f_oneway(*data)
-        if result.pvalue > ALPHA:
+        if result.pvalue > alpha:
             continue # if no significant differences this round
         
         tukey = pairwise_tukeyhsd(endog=endog,
                         groups=groups,
-                        alpha=ALPHA)
+                        alpha=alpha)
         
         rejects = Counter()
-        for (h1, h2), meandiff, reject in zip(itertools.combinations(sorted(H), 2), tukey.meandiffs, tukey.reject):            
+        for h1, h2, meandiff, _, _, _, reject in tukey.summary().data[1:]:
             if reject:
                 if meandiff > 0: rejects[h1] += 1
                 if meandiff < 0: rejects[h2] += 1
@@ -199,10 +197,8 @@ def query_single_fitness_controlled_active_(H: List[str], pos: List[str], neg: L
     return h2result
 
 
-def query_paired_fitness_controlled_active_(H: List[str], pos: List[str], neg: List[str], m, sample_size = 50, num_rounds = 20, max_length = 128, min_count = 3):
+def query_paired_fitness_controlled_active_(H: List[str], pos: List[str], neg: List[str], m, sample_size = 50, num_rounds = 20, max_length = 128, min_count = 3, alpha=1e-3):
     """Efficent query of a set of hypotheses H"""
-
-    ALPHA = 1e-3
 
     # set up hypotheses
     h2result = {h:
@@ -267,15 +263,15 @@ def query_paired_fitness_controlled_active_(H: List[str], pos: List[str], neg: L
             groups.extend([h] * len(scores))
 
         result = f_oneway(*data)
-        if result.pvalue > ALPHA:
+        if result.pvalue > alpha:
             continue # if no significant differences this round
         
         tukey = pairwise_tukeyhsd(endog=endog,
                         groups=groups,
-                        alpha=ALPHA)
+                        alpha=alpha)
         
         rejects = Counter()
-        for (h1, h2), meandiff, reject in zip(itertools.combinations(sorted(H), 2), tukey.meandiffs, tukey.reject):            
+        for h1, h2, meandiff, _, _, _, reject in tukey.summary().data[1:]:    
             if reject:
                 if meandiff > 0: rejects[h1] += 1
                 if meandiff < 0: rejects[h2] += 1
