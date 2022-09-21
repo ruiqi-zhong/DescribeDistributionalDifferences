@@ -5,7 +5,7 @@ import time
 from sklearn.model_selection import train_test_split
 
 if __name__ == '__main__':
-    model_name = 'unifiedqa-t5-small'
+    model_name = 'allenai/unifiedqa-t5-small'
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     tokenizer.pad_token = '<pad>'
     tokenizer.padding_side = 'left'
