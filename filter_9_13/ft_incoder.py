@@ -1,4 +1,4 @@
-from transformers import AutoTokenizer, AutoModelForCausalLM
+from transformers import T5Tokenizer, T5ForConditionalGeneration
 import pickle as pkl
 from ft_infer import train
 import time
@@ -6,7 +6,7 @@ from sklearn.model_selection import train_test_split
 
 if __name__ == '__main__':
     model_name = 'allenai/unifiedqa-t5-small'
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    tokenizer = T5Tokenizer.from_pretrained(model_name)
     tokenizer.pad_token = '<pad>'
     tokenizer.padding_side = 'left'
     tokenizer.truncation_side = 'left'
@@ -14,7 +14,7 @@ if __name__ == '__main__':
     task_name = 'filter'
     data_f_name = 'filter_finetune.pkl'
 
-    model = AutoModelForCausalLM.from_pretrained(model_name)
+    model = T5ForConditionalGeneration.from_pretrained(model_name)
     model_tokenizer = (model, tokenizer)
 
     prompt_completion = pkl.load(open(data_f_name, 'rb'))
