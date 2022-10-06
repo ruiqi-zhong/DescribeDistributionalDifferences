@@ -18,7 +18,7 @@ def describe(pos: List[str], # a list of text samples from D_1
 
     # saving the initial arguments
     if save_folder is None:
-        save_folder = 'end2end_jobs/' + datetime.now().strftime("%Y%m%d%H%M%S")
+        save_folder = 'compare_verifier_jobs/' + datetime.now().strftime("%Y%m%d%H%M%S")
     if not os.path.exists(save_folder):
         os.mkdir(save_folder)
     else:
