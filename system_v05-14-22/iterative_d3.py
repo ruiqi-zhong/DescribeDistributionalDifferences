@@ -85,10 +85,11 @@ def predict_scores(pos,
 
 if __name__ == '__main__':
     import tqdm
-    distribution_pairs = json.load(open('../benchmark_sec_4/benchmark.json'))
+    distribution_pairs = json.load(open('../benchmark_sec_4/benchmark.json'))[10:]
 
     all_h2score = []
     for i, d in enumerate(tqdm.tqdm(distribution_pairs)):
+        print(distribution_pairs['pair'])
         h2score = iterative_d3(pos=d['positive_samples'], 
                            neg=d['negative_samples'], 
                            note='benchmark %d; can be anything, for logging purpose only' % i)
