@@ -285,6 +285,21 @@ def query_paired_fitness_controlled_active_(H: List[str], pos: List[str], neg: L
 
     return h2result
     
+def evaluate_single(h, samples, m):
+
+    q = SINGLE_QUESTION_TEMPLATE.format(h=h)
+    h_text2score = {}
+
+    qc_dicts = [{'q': q, 'c': SINGLE_CONTEXT_TEMPLATE.format(sent=sent)} for sent in samples]
+    logits = m.get_logits_from_input_dict(qc_dicts, bsize=BSIZE)[:,1]
+    for text, score in zip(samples, logits):
+        h_text2score[text] = score
+
+    return {
+        'h': h,
+        'text2score':h_text2score
+    }
+
 def query_single_fitness_controlled_(h, pos, neg, num_examples, m):
     q = 'Is it true that this sentence ' + h + '?'
     pos, neg = list(pos), list(neg)
@@ -348,7 +363,7 @@ def query_paired_fitness_controlled_(h, pos, neg, num_examples, m, max_length=12
     }
 
 def split_single_fitness_controlled_(h, pos, neg, m):
-    q = 'Is it true that the text snippet ' + h + '?'
+    q = SINGLE_QUESTION_TEMPLATE.format(h=h)
     pos = list(pos)
     neg = list(neg)
 

@@ -53,6 +53,8 @@ def predict_scores(pos,
     h2result = verifier.return_verification_active(proposed_hypotheses, pos, neg)
     top_h = max(h2result, key=lambda h: h2result[h]['h_score'])
 
+    print(top_h)
+
     all_samples = pos+neg
 
     # evaluate hypothesis on every sample
@@ -79,7 +81,7 @@ def predict_scores(pos,
     for neg_text in neg:
         neg2res = text2res[neg_text]
 
-    return predict_scores(pos, neg, pos2res, neg2res, depth-1, proposer, verifier)
+    predict_scores(pos, neg, pos2res, neg2res, depth-1, proposer, verifier)
 
 if __name__ == '__main__':
     import tqdm

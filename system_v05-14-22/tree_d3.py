@@ -4,8 +4,9 @@ import pickle as pkl
 from get_extreme_w_highlight import return_extreme_values
 from proposer_wrapper import init_proposer
 from verifier_wrapper import init_verifier
-import json
 from typing import List
+import datetime
+import pandas as pd
 
 class D3TreeSystem:
 
@@ -26,7 +27,10 @@ class D3TreeSystem:
             depth = 0,
             save_folder=None):
         
-        self.root = Tree(
+        if save_folder==None:
+            save_folder = 'tree_d3_jobs/' + datetime.now().strftime("%Y%m%d%H%M%S")
+
+        self.root = D3Tree(
             self.proposer_name,
             self.proposer,
             self.verifier_name,
@@ -34,7 +38,10 @@ class D3TreeSystem:
         )
         self.root.fit(pos, neg, pair, depth, save_folder)
 
-class Tree:
+        with open(save_folder, 'model.pkl') as f:
+            pkl.dump(self, f)
+
+class D3Tree:
 
     def __init__(self,
         proposer_name: str,
@@ -94,7 +101,6 @@ class Tree:
         
         pkl.dump(h2result, open(os.path.join(save_folder, 'scored_hypotheses.pkl'), 'wb'))
         
-
         # split by top hypothesis
         print([(h, h2result[h]['h_score']) for h in proposed_hypotheses])
         top_h = max(h2result, key=lambda h: h2result[h]['h_score'])
@@ -107,7 +113,7 @@ class Tree:
 
         splitresult = self.verifier.return_split(top_h, pos, neg)
         
-        left_branch = Tree(
+        left_branch = D3Tree(
             self.proposer_name,
             self.proposer,
             self.verifier_name,
@@ -120,7 +126,7 @@ class Tree:
                         save_folder)
         self.left = left_branch
 
-        right_branch = Tree(
+        right_branch = D3Tree(
             self.proposer_name,
             self.proposer,
             self.verifier_name,
