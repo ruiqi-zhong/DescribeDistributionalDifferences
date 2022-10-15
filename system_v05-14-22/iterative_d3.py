@@ -89,7 +89,7 @@ if __name__ == '__main__':
 
     all_h2score = []
     for i, d in enumerate(tqdm.tqdm(distribution_pairs)):
-        print(distribution_pairs['pair'])
+        print(d['pair'])
         h2score = iterative_d3(pos=d['positive_samples'], 
                            neg=d['negative_samples'], 
                            note='benchmark %d; can be anything, for logging purpose only' % i)
