@@ -94,30 +94,41 @@ def lexical_diversity(sorted_A: List[str], sorted_B: List[str], top_p: float = 0
   
     return a_candidates, b_candidates
 
+
+
+
 if __name__ == "__main__":
-    ps = PorterStemmer()
-    out = []
 
-    groups = json.load(open('shap_results/shap_result_groups.json'))
+    def one_sample_generator(word_freq):
+        s = ''
+        for w, f in word_freq.items():
+            if np.random.rand() < f:
+                s += w + ' '
+        return s
 
-    for i in range(10):
-        data = groups[i]
-        # data["pos2score"] is a dictionary that map each positive sentence to its score
-        #pos_sorted = sorted(data["pos2score"].items(), key=lambda x: x[1], reverse=True)
-        #neg_sorted = sorted(data["neg2score"].items(), key=lambda x: x[1], reverse=True)
-        pos_sorted = data['A']
-        neg_sorted = data['B']
-        pos, neg = lexical_diversity(pos_sorted, neg_sorted)
+    A_word_freq = {
+        'one': 1,
+        'two': 0.8,
+        'three': 0.2,
+        'four': 0.2,
+        'five': 0.2,
+        'six': 0.2
+    }
+    As = [one_sample_generator(A_word_freq) for _ in range(1000)]
+    As = sorted(As, key=lambda x: (1 if 'two' in x else 0) + 0.1 * len(x), reverse=True)
+    print(As[:3])
 
-        output_json = {
-            "A": [sentence for sentence in pos],
-#            "A_Highlight": [data["pos2highlight"][sentence] for sentence in pos],
-            "B": [sentence for sentence in neg],
-#            "B_Highlight": [data["neg2highlight"][sentence] for sentence in neg],
-        }
+    B_word_freq = {
+        'one': 1,
+        'seven': 0.8,
+        'eight': 0.2,
+        'nine': 0.2,
+        'ten': 0.2,
+        'eleven': 0.2
+    }
+    Bs = [one_sample_generator(B_word_freq) for _ in range(1000)]
+    Bs = sorted(Bs, key=lambda x: (1 if 'seven' in x else 0) + 0.1 * len(x), reverse=True)
+    print(Bs[:3])
+    print(lexical_diversity(As, Bs, top_p=0.2, num_sentences=5))
+    
 
-        out.append(output_json)
-
-    with open("shap_result_groups.json", "w") as f:
-        out = json.dumps(out, indent=4)
-        f.write(out)
