@@ -52,6 +52,11 @@ def lexical_diversity(A, B, top_p = 0.2):
                 if a_words_count[word] > 2:
                     no_add = True 
                     break
+
+        for word in b_words:
+            if b_words_count[word] > 2:
+                    no_add = True 
+                    break
         
         if not no_add:
             for word in a_words:
