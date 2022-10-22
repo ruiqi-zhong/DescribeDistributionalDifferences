@@ -7,99 +7,61 @@ from nltk.stem import PorterStemmer
 from nltk.tokenize import word_tokenize, RegexpTokenizer
 from nltk.corpus import stopwords
 from collections import OrderedDict
-
+from collections import defaultdict
 from random import choice
 
 
-def total_words(A, B):
-    """
-    Gets total frequency of non-stop words of all sentences after stemming in 
-    groups A and B. Ex. if "bat" appears 10 times out of 100 words then 
-    the entry for "bat" would be 0.1
-    """
-    stops = set(stopwords.words("english"))
-    ps = PorterStemmer()
-    word_map = dict()
-
-    def loop(sentences):
-        for key in sentences:
-            key = key.translate(str.maketrans('', '', string.punctuation))
-            words = word_tokenize(key)
-
-            for w in words: 
-                if not w in stops:
-                    word_map[w] = word_map.get(ps.stem(w), 0) + 1
-        
-    loop(A)
-    loop(B) 
-
-    total = 0
-    for key in word_map:
-        total += word_map[key]
-
-    out = OrderedDict() 
-
-    for k, v in sorted(
-            word_map.items(), key=lambda item: item[1], reverse=True):
-        out[k] = v / total
-    
-    return out
-
 def lexical_diversity(A, B, top_p = 0.2):
     """
-    Uses weighted probabilty distributions to determine whether to pick a candidate or not.
-    1. Grabs top p sentences in groups A and B 
-    2. loops through until a and b are at least length 5. 
-        for each iteration:
-            a. grab a random pair of sentences from A and B 
-            b. remove punctuation and tokenize 
-            c. find the most frequent shared word bewteen the two sentences.
-               If the sentnces don't share any words then add them both regardless. 
-            d. Grab the frequency f from step c. and run a weighted probability random choice
-               distribution, where we add the sentence with probability 1 / (1 + sqrt(f))
-               The intution behind this is if f is a very frequent word, f would be higher 
-               and would make 1 / (1 + sqrt(f)) smaller. We take the square root 
-               of the frequency to prevent underflow as the frequencies can get very small. 
+    Gets two random sentences from A and B from the top p sentences from each 
+        1. for each word in sentence A, check if it exists in sentence B 
+            a. if the word exists in both sentences, check if the 
+               counts between our current total set of words is > 2 --> if yes, we don't add
+            b. if the word does not exist in both sentences, check if we 
+               already have more than 2 occurences of the word in our total count
+               for a sentences --> if yes, we don't add
     """
     a_candidates = [] 
     b_candidates = [] 
+    stops = set(stopwords.words("english"))
+    ps = PorterStemmer()
 
     A = [key for i, key in enumerate(A.keys()) if i <= int(top_p * len(A.keys()))]
     B = [key for i, key in enumerate(B.keys()) if i <= int(top_p * len(B.keys()))]
-    word_freq = total_words(A, B)
-    
+    a_words_count = defaultdict(int)
+    b_words_count = defaultdict(int)
     while len(a_candidates) < 5 or len(b_candidates) < 5:
-        if len(A) == 0 or len(B) == 0: 
-            break
         a = choice(A)
-        b = choice(B)
-
+        b = choice(B) 
         a_no_punc = a.translate(str.maketrans('', '', string.punctuation))
         b_no_punc = b.translate(str.maketrans('', '', string.punctuation))
 
-        a_words = word_tokenize(a_no_punc)
-        b_words = word_tokenize(b_no_punc) 
+        a_words = {ps.stem(word) for word in word_tokenize(a_no_punc) if word not in stops}
+        b_words = {ps.stem(word) for word in word_tokenize(b_no_punc) if word not in stops} 
 
-        max_freq = -1
+        no_add = False
         for word in a_words:
-            if word in b_words and word in word_freq:
-                max_freq = max(max_freq, word_freq[word])
-        
-        if max_freq != -1:
-            p = 1 / (1 + math.sqrt(max_freq))
-            draw = np.random.choice([1, 0], 1, [p, 1 - p])
+            if word in b_words:
+                diff = a_words_count[word] - b_words_count[word]
 
-            if draw == 1:
-                a_candidates.append(a)
-                b_candidates.append(b) 
-                A.remove(a)
-                B.remove(b)
-        else:
+                if abs(diff) > 2:
+                    no_add = True
+                    break
+            else:
+                if a_words_count[word] > 2:
+                    no_add = True 
+                    break
+        
+        if not no_add:
+            for word in a_words:
+                a_words_count[word] += 1
+            for word in b_words:
+                b_words_count[word] += 1
+
             a_candidates.append(a)
             b_candidates.append(b) 
             A.remove(a)
-            B.remove(b)
-
+            B.remove(b)   
     return a_candidates, b_candidates
 
 if __name__ == "__main__":
