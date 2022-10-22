@@ -16,7 +16,8 @@ def lexical_diversity(A, B, top_p = 0.2):
     Gets two random sentences from A and B from the top p sentences from each 
         1. for each word in sentence A, check if it exists in sentence B 
             a. if the word exists in both sentences, check if the 
-               counts between our current total set of words is > 2 --> if yes, we don't add
+               counts between our set of words A and B has a difference > 2 
+               --> if yes, we don't add
             b. if the word does not exist in both sentences, check if we 
                already have more than 2 occurences of the word in our total count
                for a sentences --> if yes, we don't add
