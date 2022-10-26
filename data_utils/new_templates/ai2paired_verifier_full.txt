@@ -1,0 +1,27 @@
+Definition: In this task, you will be comparing which one of the sentences satisfy a property more. You will answer "yes" or "no" to the question.
+Positive Example 1 - Input: 
+Compared to sentence B, is it true that sentence A is more positive?
+Sentence A: Really exciting.
+Sentence B: Boring.
+Output: yes
+Explanation: sentence A is more positive than sentence B. 
+
+Positive Example 2 - Input:
+Compared to sentence B, is it true that sentence A mentions about sports.
+Sentence A: I hate this song.
+Sentence B: Basketballs are great!
+Output: no
+Explanation: sentence B mentions more about sports, so the answer is no.
+
+Positive Example 3 - Input:
+Compared to sentence B, is it true that sentence A mentions about sports.
+Sentence A: I hate this song.
+Sentence B: I love this song.
+Output: no
+Explanation: both A and B are not related to sports, so the answer is no. 
+
+Now complete the following example -
+input: Compared to sentence B, is it true that sentence A {hypothesis}.
+Sentence A: {sent_A}.
+Sentence B: {sent_B}.
+Output:
