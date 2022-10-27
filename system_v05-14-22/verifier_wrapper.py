@@ -242,8 +242,8 @@ def query_paired_fitness_controlled_active_(H: List[str], pos: List[str], neg: L
                 qc_dicts.append({'q': q, 'c': c})
             negative_logits = m.get_logits_from_input_dict(qc_dicts, bsize=BSIZE, progress_bar=False)
 
-            pos_score = np.mean((np.e ** positive_logits) > 0.5)
-            neg_score = np.mean((np.e ** negative_logits) > 0.5)
+            pos_score = np.e ** positive_logits
+            neg_score = np.e ** negative_logits
             scores = pos_score - neg_score
 
             h2result[h]['pairs'].extend(pairs)
