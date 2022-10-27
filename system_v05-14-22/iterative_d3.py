@@ -1,84 +1,97 @@
 from get_extreme_w_highlight import return_extreme_values
-from proposer_wrapper import init_proposer
+from proposer_wrapper import init_proposer, Proposer
 from verifier_wrapper import init_verifier, evaluate_single
-from sklearn.linear_model import LinearRegression
-import json
+from sklearn.linear_model import Lasso
 import pandas as pd
-from typing import List
+from typing import List, Callable
 
-def iterative_d3(pos: List[str], # a list of text samples from D_1
-                neg: List[str], # a list of text samples from D_0
-                note: str='', # a note about this distribution, for logging purposes
-                proposer_name: str='t5ruiqi-zhong/t5proposer_0514', # the name of the proposer. the name starts with either t5 or gpt3, followed by the directory/model-name/engine name. change argument to "t5t5-small" to debug
-                verifier_name: str='ruiqi-zhong/t5verifier_0514', # the name of the verifier, with options detailed in verifier_wrapper.py. change argument to "dummy" to debug
-                depth=3):
+SNIP_COL = 'snippet'
+REP_COL = 'rep'
+DIST_COL = 'dist'
+HYP_COL = 'h_score_'
+RES_COL = 'residual'
 
+def lasso( data: pd.DataFrame,
+                    alpha: float=.01) -> pd.DataFrame:
+    """Performs LASSO regression of representativeness on hypotheses"""
+    X = data[[col for col in data.columns if HYP_COL in col]] # all features
+    y = data[REP_COL] # rep score
+    clf = Lasso(alpha=alpha)
+    clf.fit(X, y)
+    drop_hyp = [hyp for (hyp, coef) in zip(X.columns, clf.coef_) if not coef]
+    data = data.drop(drop_hyp, axis=1) # drop features
+    data[RES_COL] = y - clf.predict(X) # update residuals
+    return data
+
+def iterative_d3(   pos: List[str], # a list of text samples from D_1
+                    neg: List[str], # a list of text samples from D_0
+                    proposer_name: str='t5ruiqi-zhong/t5proposer_0514', # the name of the proposer. the name starts with either t5 or gpt3, followed by the directory/model-name/engine name. change argument to "t5t5-small" to debug
+                    verifier_name: str='ruiqi-zhong/t5verifier_0514', # the name of the verifier, with options detailed in verifier_wrapper.py. change argument to "dummy" to debug
+                    depth=3,
+                    regressor:Callable=lasso):
     """Returns a set of hypotheses that predict pos/neg representativeness for given depth"""
     
+    # get representative samples
     extreme_vals = return_extreme_values(pos, neg)
     pos2score, neg2score = extreme_vals['pos2score'], extreme_vals['neg2score']
 
     proposer = init_proposer(proposer_name)
     verifier = init_verifier(verifier_name)
 
-    predict_scores( pos,
-                    neg,
-                    pos2score,
-                    neg2score,
-                    depth,
-                    proposer,
-                    verifier)
-
-
-def predict_scores(pos,
-                   neg,
-                   pos2score,
-                   neg2score,
-                   depth,
-                   proposer,
-                   verifier):
-    """Finds the most predictive marginal score"""
-    
-    if not depth:
-        return
-
-    # propose a set of hypotheses
-    proposed_hypotheses = proposer.propose_hypothesis(pos2score, neg2score)
-    
+    # get text2score
     d_text2score = {}
     d_text2score.update(pos2score)
     d_text2score.update(neg2score)
 
-    # identify best hypotheses
+    snippets = pos+neg
+    dists = [1]*len(pos) + [0]*len(neg) # ground truth
+
+    data = pd.DataFrame({SNIP_COL:snippets, DIST_COL:dists})
+    data[REP_COL] = data[SNIP_COL].apply(d_text2score.get) # get rep scores
+    data[RES_COL] = data[REP_COL] # residual before predictors
+
+    # recursively predict scores
+    predict_scores( data,
+                    depth,
+                    proposer,
+                    verifier)
+
+def predict_scores(data: pd.DataFrame,
+                   depth: int,
+                   proposer: Proposer,
+                   verifier,
+                   selector:Callable):
+    """Finds the most predictive marginal score."""
+    
+    if not depth: # done recursing
+        return
+
+    pos_data, neg_data = data[data[DIST_COL] == 1],  data[data[DIST_COL] == 0]
+    pos, neg = pos_data[SNIP_COL], neg_data[SNIP_COL]
+
+    # key idea: we predict residual
+    pos2score = dict(zip(pos_data[SNIP_COL], pos_data[RES_COL]))
+    neg2score = dict(zip(neg_data[SNIP_COL], neg_data[RES_COL]))
+
+    # propose a set of hypotheses
+    proposed_hypotheses = proposer.propose_hypothesis(pos2score, neg2score)
+    
+    # get best hypothesis
     h2result = verifier.return_verification_active(proposed_hypotheses, pos, neg)
     top_h = max(h2result, key=lambda h: h2result[h]['h_score'])
+    print(f'h_{depth}: {top_h}')
 
-    print(top_h)
-
-    all_samples = pos+neg
+    snippets = data[SNIP_COL].tolist()
 
     # evaluate hypothesis on every sample
-    evaluate_results = evaluate_single(top_h,all_samples,verifier)
+    evaluate_results = evaluate_single(top_h,snippets,verifier)
     h_text2score = evaluate_results['h_text2score']
-    
+
     # update pos2score nad neg2score
-    df = pd.DataFrame({'text':all_samples})
-    df['d_score'] = df['text'].apply(lambda t: d_text2score[t])
-    df['h_score'] = df['text'].apply(lambda t: h_text2score[t])
+    data[HYP_COL + depth] = data[SNIP_COL].apply(lambda t: h_text2score[t])
 
-    linreg = LinearRegression()
-    linreg.fit(df[['h_score']], df['d_score'])
-    df['prediction'] = linreg.predict(df[['h_score']])
-    df['residual'] = df['d_score'] -  df['prediction']
-    
-    text2res = {}
-    for text, res in zip(all_samples, df['residual'].tolist()):
-        text2res[text] = res
-    
-    for pos_text in pos:
-        pos2res = text2res[pos_text]
-
-    for neg_text in neg:
-        neg2res = text2res[neg_text]
-
-    predict_scores(pos, neg, pos2res, neg2res, depth-1, proposer, verifier)
+    predict_scores( data,
+                    depth-1,
+                    proposer,
+                    verifier,
+                    selector)

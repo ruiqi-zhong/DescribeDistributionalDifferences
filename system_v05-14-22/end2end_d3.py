@@ -65,5 +65,4 @@ if __name__ == '__main__':
         h2score = describe(pos=d['positive_samples'], 
                            neg=d['negative_samples'], 
                            note='benchmark %d; can be anything, for logging purpose only' % i)
-        all_h2score.append(h2score)
-        pkl.dump(all_h2score, open('benchmark_h2score.pkl', 'wb'))
+                           
