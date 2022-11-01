@@ -1,5 +1,5 @@
 import os
-import random
+import argparse
 import pickle as pkl
 from get_extreme_w_highlight import return_extreme_values
 from proposer_wrapper import init_proposer
@@ -12,7 +12,7 @@ import tqdm
 def describe(pos: List[str], # a list of text samples from D_1
              neg: List[str], # a list of text samples from D_0
              note: str='', # a note about this distribution, for logging purposes
-             proposer_name: str='t5ruiqi-zhong/t5proposer_0514', # the name of the proposer. the name starts with either t5 or gpt3, followed by the directory/model-name/engine name. change argument to "t5t5-small" to debug
+             proposer_name: str='t5ruiqi-zhong/t5-small', # the name of the proposer. the name starts with either t5 or gpt3, followed by the directory/model-name/engine name. change argument to "t5t5-small" to debug
              verifier_name: str='ruiqi-zhong/t5verifier_0514', # the name of the verifier, with options detailed in verifier_wrapper.py. change argument to "dummy" to debug
              save_folder=None):
 
@@ -67,10 +67,20 @@ def describe(pos: List[str], # a list of text samples from D_1
 
 
 if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("debug", type=bool)
+    args = parser.parse_args()
+
+    proposer_name = 't5-small' if args.debug else 't5ruiqi-zhong/t5-small' 
+    verifier_name = 'dummy' if args.debug else 'ruiqi-zhong/t5verifier_0514' 
+
     distribution_pairs = json.load(open('../benchmark_sec_4/benchmark.json'))
 
     for i, d in enumerate(tqdm.tqdm(distribution_pairs)):
 
         describe(pos=d['positive_samples'], 
                 neg=d['negative_samples'],
+                proposer_name=proposer_name,
+                verifier_name=verifier_name,
                 note='benchmark %d; can be anything, for logging purpose only' % i)
