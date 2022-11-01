@@ -15,8 +15,9 @@ if __name__ == '__main__':
 
     all_h2score = []
     for i, d in enumerate(tqdm.tqdm(distribution_pairs)):
-        h2score = iterative_d3(pos=d['positive_samples'],
-                            proposer_name=proposer_name,
-                            verifier_name=verifier_name, 
-                           neg=d['negative_samples'])
+        h2score = iterative_d3( pos=d['positive_samples'], 
+                                neg=d['negative_samples'],
+                                proposer_name=proposer_name,
+                                verifier_name=verifier_name,
+                            )
                            

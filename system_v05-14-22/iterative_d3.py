@@ -68,11 +68,11 @@ def predict_scores(data: pd.DataFrame,
         return
 
     pos_data, neg_data = data[data[DIST_COL] == 1],  data[data[DIST_COL] == 0]
-    pos, neg = pos_data[SNIP_COL], neg_data[SNIP_COL]
+    pos, neg = pos_data[SNIP_COL].tolist(), neg_data[SNIP_COL].tolist()
 
     # key idea: we predict residual
-    pos2score = dict(zip(pos_data[SNIP_COL], pos_data[RES_COL]))
-    neg2score = dict(zip(neg_data[SNIP_COL], neg_data[RES_COL]))
+    pos2score = dict(zip(pos, pos_data[RES_COL]))
+    neg2score = dict(zip(neg, neg_data[RES_COL]))
 
     # propose a set of hypotheses
     proposed_hypotheses = proposer.propose_hypothesis(pos2score, neg2score)
