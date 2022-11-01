@@ -25,7 +25,7 @@ def lasso( data: pd.DataFrame,
 
 def iterative_d3(   pos: List[str], # a list of text samples from D_1
                     neg: List[str], # a list of text samples from D_0
-                    proposer_name: str='t5ruiqi-zhong/t5proposer_0514', # the name of the proposer. the name starts with either t5 or gpt3, followed by the directory/model-name/engine name. change argument to "t5t5-small" to debug
+                    proposer_name: str='t5ruiqi-zhong/t5proposer_0514', # the name of the proposer. the name starts with either t5 or gpt3, followed by the directory/model-name/engine name. change argument to "ip-small" to debug
                     verifier_name: str='ruiqi-zhong/t5verifier_0514', # the name of the verifier, with options detailed in verifier_wrapper.py. change argument to "dummy" to debug
                     depth=3,
                     selector:Callable=lasso):
@@ -91,8 +91,8 @@ def predict_scores(data: pd.DataFrame,
     # update pos2score nad neg2score
     data[HYP_COL + depth] = data[SNIP_COL].apply(lambda t: h_text2score[t])
 
-    predict_scores( data,
-                    depth-1,
-                    proposer,
-                    verifier,
-                    selector)
+    predict_scores( data=data,
+                    depth=depth-1,
+                    proposer=proposer,
+                    verifier=verifier,
+                    selector=selector)
