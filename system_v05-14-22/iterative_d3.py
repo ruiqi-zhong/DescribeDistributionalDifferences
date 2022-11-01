@@ -12,7 +12,7 @@ HYP_COL = 'h_score_'
 RES_COL = 'residual'
 
 def lasso( data: pd.DataFrame,
-                    alpha: float=.01) -> pd.DataFrame:
+                    alpha: float=1) -> pd.DataFrame:
     """Performs LASSO regression of representativeness on hypotheses"""
     X = data[[col for col in data.columns if HYP_COL in col]] # all features
     y = data[REP_COL] # rep score
@@ -28,7 +28,7 @@ def iterative_d3(   pos: List[str], # a list of text samples from D_1
                     proposer_name: str='t5ruiqi-zhong/t5proposer_0514', # the name of the proposer. the name starts with either t5 or gpt3, followed by the directory/model-name/engine name. change argument to "t5t5-small" to debug
                     verifier_name: str='ruiqi-zhong/t5verifier_0514', # the name of the verifier, with options detailed in verifier_wrapper.py. change argument to "dummy" to debug
                     depth=3,
-                    regressor:Callable=lasso):
+                    selector:Callable=lasso):
     """Returns a set of hypotheses that predict pos/neg representativeness for given depth"""
     
     # get representative samples
@@ -51,10 +51,11 @@ def iterative_d3(   pos: List[str], # a list of text samples from D_1
     data[RES_COL] = data[REP_COL] # residual before predictors
 
     # recursively predict scores
-    predict_scores( data,
-                    depth,
-                    proposer,
-                    verifier)
+    predict_scores( data=data,
+                    depth=depth,
+                    proposer=proposer,
+                    verifier=verifier,
+                    selector=selector)
 
 def predict_scores(data: pd.DataFrame,
                    depth: int,
