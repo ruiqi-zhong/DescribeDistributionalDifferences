@@ -128,19 +128,19 @@ def query_single_fitness_controlled_active_(H: List[str], pos: List[str], neg: L
         print(f'round: {i}')
         print(f'num hypotheses: {len(H)}')
 
+        pos_samples, neg_samples, pairs = [], [], []
+        for _ in range(sample_size): # do this number of samples
+            sent_A = random.choice(pos)
+            sent_B = random.choice(neg)
+
+            pos_samples.append(sent_A)
+            neg_samples.append(sent_B)
+            pairs.append((sent_A, sent_B))
+
         # evaluate samples; store logits; evaluate pairwise value
         for h in tqdm.tqdm(H):
 
             q = SINGLE_QUESTION_TEMPLATE.format(h=h)
-
-            pos_samples, neg_samples, pairs = [], [], []
-            for _ in range(sample_size): # do this number of samples
-                sent_A = random.choice(pos)
-                sent_B = random.choice(neg)
-
-                pos_samples.append(sent_A)
-                neg_samples.append(sent_B)
-                pairs.append((sent_A, sent_B))
 
             qc_dicts = []
             for sent in pos_samples:
@@ -153,9 +153,7 @@ def query_single_fitness_controlled_active_(H: List[str], pos: List[str], neg: L
                 qc_dicts.append({'q': q, 'c': c})
             negative_logits = m.get_logits_from_input_dict(qc_dicts, bsize=BSIZE, progress_bar=False)
 
-            pos_score = np.mean((np.e ** positive_logits) > 0.5)
-            neg_score = np.mean((np.e ** negative_logits) > 0.5)
-            scores = pos_score - neg_score
+            scores = int((positive_logits - negative_logits) > 0)
 
             h2result[h]['pairs'].extend(pairs)
             h2result[h]['scores'].extend(scores)
@@ -242,9 +240,9 @@ def query_paired_fitness_controlled_active_(H: List[str], pos: List[str], neg: L
                 qc_dicts.append({'q': q, 'c': c})
             negative_logits = m.get_logits_from_input_dict(qc_dicts, bsize=BSIZE, progress_bar=False)
 
-            pos_score = np.e ** positive_logits
-            neg_score = np.e ** negative_logits
-            scores = pos_score - neg_score
+            pos_score = (np.e ** positive_logits > 0).astype(int)
+            neg_score = (np.e ** negative_logits > 0).astype(int)
+            scores = 1/2 * (pos_score - neg_score + 1)
 
             h2result[h]['pairs'].extend(pairs)
             h2result[h]['scores'].extend(scores)
