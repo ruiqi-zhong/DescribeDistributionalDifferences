@@ -18,6 +18,5 @@ if __name__ == '__main__':
         h2score = iterative_d3(pos=d['positive_samples'],
                             proposer_name=proposer_name,
                             verifier_name=verifier_name, 
-                           neg=d['negative_samples'], 
-                           note='benchmark %d; can be anything, for logging purpose only' % i)
+                           neg=d['negative_samples'])
                            
