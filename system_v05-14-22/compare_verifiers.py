@@ -12,7 +12,7 @@ import tqdm
 def describe(pos: List[str], # a list of text samples from D_1
              neg: List[str], # a list of text samples from D_0
              note: str='', # a note about this distribution, for logging purposes
-             proposer_name: str='t5ruiqi-zhong/t5-small', # the name of the proposer. the name starts with either t5 or gpt3, followed by the directory/model-name/engine name. change argument to "t5t5-small" to debug
+             proposer_name: str='t5ruiqi-zhong/t5t5-small', # the name of the proposer. the name starts with either t5 or gpt3, followed by the directory/model-name/engine name. change argument to "t5t5-small" to debug
              verifier_name: str='ruiqi-zhong/t5verifier_0514', # the name of the verifier, with options detailed in verifier_wrapper.py. change argument to "dummy" to debug
              save_folder=None):
 
@@ -72,7 +72,7 @@ if __name__ == '__main__':
     parser.add_argument("--debug",action='store_true')
     args = parser.parse_args()
 
-    proposer_name = 't5-small' if args.debug else 't5ruiqi-zhong/t5t5-small' 
+    proposer_name = 't5t5-small' if args.debug else 't5ruiqi-zhong/t5t5-small' 
     verifier_name = 'dummy' if args.debug else 'ruiqi-zhong/t5verifier_0514' 
 
     distribution_pairs = json.load(open('../benchmark_sec_4/benchmark.json'))

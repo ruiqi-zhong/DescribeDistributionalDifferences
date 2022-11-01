@@ -10,7 +10,7 @@ if __name__ == '__main__':
     parser.add_argument("--debug",action='store_true')
     args = parser.parse_args()
 
-    proposer_name = 't5-small' if args.debug else 't5ruiqi-zhong/t5t5-small' 
+    proposer_name = 't5t5-small' if args.debug else 't5ruiqi-zhong/t5t5-small' 
     verifier_name = 'dummy' if args.debug else 'ruiqi-zhong/t5verifier_0514' 
 
     all_h2score = []
