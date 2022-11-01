@@ -69,7 +69,7 @@ def describe(pos: List[str], # a list of text samples from D_1
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("debug",action='store_true')
+    parser.add_argument("--debug",action='store_true')
     args = parser.parse_args()
 
     proposer_name = 't5-small' if args.debug else 't5ruiqi-zhong/t5-small' 
