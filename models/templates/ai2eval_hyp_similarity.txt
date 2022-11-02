@@ -1,0 +1,15 @@
+Definition: In this task, you will be given a list of sentence segments, and you need to tell whether the target sentence has similar meaning to any one from the given list by answering "yes" or "no".
+
+Positive Example 1 - Input: 
+input: list of sentence segmenets: is about sports; is about entertainment. target sentence: talks about sports. Is the target sentence similar to any sentence from the list?
+Output: yes
+Explanation: "talks about sports" has a similar meaning to "is about sports"
+
+Positive Example 2 - Input: 
+input: list of sentence segmenets: is about movie; talks about actors. target sentence: is interesting to read. Is the target sentence similar to any sentence from the list?
+Output: no
+Explanation: the target sentence does not have a similar meaning to any of the sentence in the list.
+
+Now complete the following example -
+input: list of sentence segmenets: {sentences}. target sentence: {target}. Is the target sentence similar to any sentence from the list?
+Output:

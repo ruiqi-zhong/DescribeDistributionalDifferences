@@ -1,0 +1,14 @@
+The complete data (i.e., a list of positive examples, negative examples, and the hypothesis) are in this folder. Run 
+"python3 construct_prompt.py" to get examples. You can also choose to reformat the prompt/write your own instructions if you want to. 
+
+
+Using TPUs (GPU is also okay, if memory and speed is not okay), fine-tune:
+- GPT-J 6B, on the summarizing difference proposer task + AI2 instructions
+- GPT-J 6B, on the summarizing difference proposer task + Huggingface prompt source
+- T5 11B on the summarizing difference proposer task + AI2 instructions
+- T5 11B, on the summarizing difference proposer task + Huggingface prompt source
+- GPT-J 20B, on the summarizing difference proposer task + AI2 instructions
+- GPT-J 20B, on the summarizing difference proposer task + Huggingface prompt source
+
+
+After fine-tuning each model, generate 60 hypotheses for each pair of distributions in the "summarizing difference test set".

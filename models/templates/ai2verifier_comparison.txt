@@ -1,0 +1,5 @@
+Definition: In this task, you will check whether compared to sentence B, sentence A {hypothesis}.
+
+Now complete the following example -
+input: sentence A: {sentence_A}. sentence B: {sentence_B}. Compared to sentence B, is it true that sentence A {hypothesis}?
+Output:

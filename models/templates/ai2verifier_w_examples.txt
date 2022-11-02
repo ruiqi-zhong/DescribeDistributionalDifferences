@@ -1,0 +1,13 @@
+Definition: In this task, you will check whether the text {hypothesis}, and answer "yes" or "no".
+
+Positive Example 1 - Input: 
+input: {positive_sample}
+Output: yes
+
+Positive Example 2 - Input: 
+input: {negative_sample}
+Output: no
+
+Now complete the following example -
+input: {target_sample}
+Output:

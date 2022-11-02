@@ -1,0 +1,9 @@
+Definition: In this task, you will be given two groups of sentences (Group A and Group B). You need to summarize one key difference between the two groups. The difference can range from shallow (“contains the word “yay” at the end of the sentence”) to topical (“loves school”) to more complex social and linguistic cues (“supports universal healthcare”, “is written in first person”).
+
+Now complete the following example -
+input: {A_block}
+
+{B_block}
+
+Compared to sentences from Group B, each sentence from Group A
+output:
