@@ -21,7 +21,7 @@ def update_ground_truth():
     json.dump(data, open('old_data/test_complete_data.json', 'w'))
 
 
-proposer_template = open('templates/ai2proposer_full.txt').read()
+proposer_template = open('models/templates/ai2proposer_full.txt').read()
 
 def construct_proposer_prompt(pos_sentences, neg_sentences, num_incontext_samples=4):
     subsampled_sentences = np.random.choice(pos_sentences, min(num_incontext_samples, len(pos_sentences)), replace=False)
@@ -71,7 +71,7 @@ def create_proposer_data():
     }
     return all_data
 
-paired_verifier_template = open('templates/ai2paired_verifier_full.txt').read()
+paired_verifier_template = open('models/templates/ai2paired_verifier_full.txt').read()
 def construct_paired_verifier_prompt(sent_A, sent_B, hypothesis):
     prompt = paired_verifier_template.format(sent_A=sent_A, sent_B=sent_B, hypothesis=hypothesis)
     return prompt
@@ -121,7 +121,7 @@ def create_paired_verifier_data():
     return all_data
 
 
-verifier_w_examples_template = open('templates/ai2verifier_w_examples.txt').read()
+verifier_w_examples_template = open('models/templates/ai2verifier_w_examples.txt').read()
 def construct_verifier_w_examples_prompt(positive_sample, negative_sample, hypothesis, target_sample):
     prompt = verifier_w_examples_template.format(positive_sample=positive_sample, negative_sample=negative_sample, hypothesis=hypothesis, target_sample=target_sample)
     return prompt
@@ -206,8 +206,8 @@ if __name__ == '__main__':
                 d['name'] = name
                 key_data.append(d)
         all_data[key] = key_data
-    # json.dump(all_data, open('data/ai2_1102data.json', 'w'))
+    # json.dump(all_data, open('models/data/ai2_1102data.json', 'w'))
 
-    # data_path = 'data/ai2_1102data.json'
+    # data_path = 'models/data/ai2_1102data.json'
     # data = create_perfect_dummy(data_path)
     # json.dump(data, open('data/ai2_1102data_dummy_perfect.json', 'w'))

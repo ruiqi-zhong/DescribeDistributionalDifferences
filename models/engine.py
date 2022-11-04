@@ -1,11 +1,17 @@
 import os
-from models import construct_proposer_prompt, construct_verifier_w_examples_prompt, construct_paired_verifier_prompt
+import sys
+sys.path.append('./')
+
+from models.create_data_for_ft import construct_proposer_prompt, construct_verifier_w_examples_prompt, construct_paired_verifier_prompt
 import torch
 from tqdm import trange
 from collections import OrderedDict
+import random
+
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 mount_dir = 'mount/'
+debug_prompt = True
 
 def truncate_string(s, stop_strs):
     for stop_str in stop_strs:
@@ -92,10 +98,45 @@ class Engine:
     
     def propose_hypotheses(self, ds):
         prompts = [construct_proposer_prompt(d['pos_sents'], d['neg_sents']) for d in ds]
+        if debug_prompt:
+            print('example proposer hypothesis prompt')
+            print(prompts[0])
         return sample_batched(self.model_tokenizer, prompts)
     
     def verify_w_examples(self, ds):
         prompts = [construct_verifier_w_examples_prompt(d['positive_sample'], d['negative_sample'], d['hypothesis'], d['target_sample']) for d in ds]
+        if debug_prompt:
+            print('example verifier with example prompt')
+            print(prompts[0])
         return sample_batched(self.model_tokenizer, prompts)
+
+    def verify_paired(self, ds):
+        prompts = [construct_paired_verifier_prompt(d['positive_sample'], d['negative_sample'], d['hypothesis']) for d in ds]
+        if debug_prompt:
+            print('example verifier paired prompt')
+            print(prompts[0])
+        return sample_batched(self.model_tokenizer, prompts)
+
+
+
+if __name__ == '__main__':
+    class ID_Dict(dict):
+        def __getitem__(self, key):
+            return 'example_' + key + str(random.randint(0, 1000000))
+
+    from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+    model_name = 't5-small'
+    model = AutoModelForSeq2SeqLM.from_pretrained(model_name).to(device)
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+
+    id_dict = ID_Dict()
+
+    engine = Engine((model, tokenizer))
+    ds = [id_dict for _ in range(10)]
+    engine.propose_hypotheses([{'pos_sents': ['a', 'b'], 'neg_sents': ['c', 'd']}])
+    engine.verify_w_examples(ds)
+    engine.verify_paired(ds)
+
+
 
 
