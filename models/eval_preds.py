@@ -3,6 +3,7 @@ from collections import defaultdict
 import json
 from nltk import PorterStemmer
 import numpy as np
+from collections import Counter
 
 
 removed_words = ['is', 'a', 'about', 'contain', 'describ', 'the', 'mention', 'an', 'of', 'to', 'use', 'or', 'in', 'express', 'experi', 'be', 'sound', 'peopl', 'someth', 'on', 'discuss', 'someon', 'movi', 'histor', 'action', 'like']
@@ -63,11 +64,21 @@ def eval_proposer(model_preds):
 def eval_target(path):
     model_preds = json.load(open(path, 'r'))
     metrics = eval_proposer([d for d in model_preds if d['orig_d']['name'] == 'proposer'])
-
     for name in ['paired_verifier', 'verifier_w_examples']:
-        metrics[name + '_acc'] = np.mean([d['generations'][0]['lm_postprocess'].strip() == d['demonstration'].strip() for d in model_preds if d['orig_d']['name'] == name])
+        relevant_model_preds = [d for d in model_preds if d['orig_d']['name'] == name]
+        # print(Counter([d['generations'][0]['lm_postprocess'] for d in relevant_model_preds]))
+        # print(relevant_model_preds[0]['prompt'])
+        # print(relevant_model_preds[0]['generations'][0]['lm_postprocess'])
+
+        # input()
+        metrics[name + '_acc'] = np.mean([d['generations'][0]['lm_postprocess'].strip() == d['demonstration'].strip() for d in relevant_model_preds])
+
+
     return metrics
 
 if __name__ == '__main__':
-    metrics = eval_target('data/ai2_1102data_dummy_perfect.json')
+    # eval_path = 'data/ai2_1102data_dummy_perfect.json'
+    eval_path = 'model_preds/temperature=0.80_n=1_step=0.json'
+    metrics = eval_target(eval_path)
+    # metrics = eval_target('../automatic/model_preds/proposer/temperature=0.80_n=8_step=40.json')
     print(metrics)
