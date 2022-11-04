@@ -7,11 +7,17 @@ import torch
 from tqdm import trange
 from collections import OrderedDict
 import random
+import numpy as np
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 mount_dir = 'mount/'
 debug_prompt = True
+
+def sm(l):
+    l = np.array(l)
+    l = l - l.max()
+    return np.exp(l) / np.sum(np.exp(l))
 
 def truncate_string(s, stop_strs):
     for stop_str in stop_strs:
@@ -30,6 +36,7 @@ def sample_batched(
     max_source_length=1024, max_target_length=512, save_score_tok_idx=None, verbose=False, stop_strs=None):
     model, tokenizer = model_tokenizer
     prompts_inflated = []
+    assert n == 1
 
     if stop_strs is None:
         stop_strs = []
@@ -79,7 +86,7 @@ def sample_batched(
         return_dict[prompt] = [
             {
                 'lm_postprocess': truncate_string(remove_prefix(all_completions[idx].replace(tokenizer.pad_token, ''), prompt), stop_strs), 
-                'scores': [all_first_scores[idx][j] for j in save_score_tok_idx], 
+                'scores': sm([all_first_scores[idx][j] for j in save_score_tok_idx]), 
                 'full_generated': all_completions[idx],
                 'prompt': prompt
             }
@@ -101,21 +108,21 @@ class Engine:
         if debug_prompt:
             print('example proposer hypothesis prompt')
             print(prompts[0])
-        return sample_batched(self.model_tokenizer, prompts)
+        return [d[0]['lm_postprocess'] for prompt, d in sample_batched(self.model_tokenizer, prompts).items()]
     
     def verify_w_examples(self, ds):
         prompts = [construct_verifier_w_examples_prompt(d['positive_sample'], d['negative_sample'], d['hypothesis'], d['target_sample']) for d in ds]
         if debug_prompt:
             print('example verifier with example prompt')
             print(prompts[0])
-        return sample_batched(self.model_tokenizer, prompts)
+        return [d[0]['scores'][1] for prompt, d in sample_batched(self.model_tokenizer, prompts).items()]
 
     def verify_paired(self, ds):
         prompts = [construct_paired_verifier_prompt(d['positive_sample'], d['negative_sample'], d['hypothesis']) for d in ds]
         if debug_prompt:
             print('example verifier paired prompt')
             print(prompts[0])
-        return sample_batched(self.model_tokenizer, prompts)
+        return [d[0]['scores'][1] for prompt, d in sample_batched(self.model_tokenizer, prompts).items()]
 
 
 
@@ -133,9 +140,9 @@ if __name__ == '__main__':
 
     engine = Engine((model, tokenizer))
     ds = [id_dict for _ in range(10)]
-    engine.propose_hypotheses([{'pos_sents': ['a', 'b'], 'neg_sents': ['c', 'd']}])
-    engine.verify_w_examples(ds)
-    engine.verify_paired(ds)
+    print(engine.propose_hypotheses([{'pos_sents': ['a', 'b'], 'neg_sents': ['c', 'd']}]))
+    print(engine.verify_w_examples(ds))
+    print(engine.verify_paired(ds))
 
 
 

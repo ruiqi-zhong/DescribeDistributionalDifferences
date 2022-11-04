@@ -3,6 +3,10 @@ import json
 import tqdm
 from preprocess import tok_subspan
 
+
+def clamp_in_range(ls, lowerbound=-2, upperbound=2):
+    return [x if lowerbound <= x <= upperbound else (lowerbound if x < lowerbound else upperbound) for x in ls]
+
 def update_ground_truth():
     updated_ground_truth = {
         45:  ['concerns visa application', 'is about getting a visa'],
