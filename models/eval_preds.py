@@ -4,7 +4,7 @@ import json
 from nltk import PorterStemmer
 import numpy as np
 from collections import Counter
-
+from itertools import product
 
 removed_words = ['is', 'a', 'about', 'contain', 'describ', 'the', 'mention', 'an', 'of', 'to', 'use', 'or', 'in', 'express', 'experi', 'be', 'sound', 'peopl', 'someth', 'on', 'discuss', 'someon', 'movi', 'histor', 'action', 'like']
 id2ground_truth = json.load(open('data/id2ground_truth.json', 'r'))
@@ -17,6 +17,12 @@ def extract_words(h):
 train_hyps = {h: extract_words(h) for h in train_hyps}
 def overlap(set1, set2):
     return len(set1 & set2) / len(set1 | set2)
+
+def binary(logit):
+    if logit[0] > logit[1]:
+        return 'no'
+    else:
+        return 'yes'
 
 def eval_proposer(model_preds):
     id2results = {}
@@ -64,21 +70,50 @@ def eval_proposer(model_preds):
 def eval_target(path):
     model_preds = json.load(open(path, 'r'))
     metrics = eval_proposer([d for d in model_preds if d['orig_d']['name'] == 'proposer'])
-    for name in ['paired_verifier', 'verifier_w_examples']:
-        relevant_model_preds = [d for d in model_preds if d['orig_d']['name'] == name]
-        # print(Counter([d['generations'][0]['lm_postprocess'] for d in relevant_model_preds]))
-        # print(relevant_model_preds[0]['prompt'])
-        # print(relevant_model_preds[0]['generations'][0]['lm_postprocess'])
 
-        # input()
-        metrics[name + '_acc'] = np.mean([d['generations'][0]['lm_postprocess'].strip() == d['demonstration'].strip() for d in relevant_model_preds])
+    # metrics['paired_verifier_acc'] = np.mean([binary(d['generations'][0]['scores']) == d['demonstration'].strip() for d in model_preds if d['orig_d']['name'] == 'paired_verifier'])
 
-
+    paired_verifier_model_preds = [d for d in model_preds if d['orig_d']['name'] == 'paired_verifier']
+    paired_verifier_model_preds_by_id = defaultdict(list)
+    for d in paired_verifier_model_preds:
+        paired_verifier_model_preds_by_id[d['orig_d']['id']].append(d)
+    
+    all_accs = []
+    for id in paired_verifier_model_preds_by_id:
+        accs = []
+        for d in paired_verifier_model_preds_by_id[id]:
+            accs.append(binary(d['generations'][0]['scores']) == d['demonstration'].strip())
+        all_accs.append(np.mean(accs))
+    metrics['paired_verifier_acc'] = np.mean(all_accs)
+    verifier_w_example_model_preds = [d for d in model_preds if d['orig_d']['name'] == 'verifier_w_examples']
+    verifier_w_example_model_preds_by_id = defaultdict(list)
+    for d in verifier_w_example_model_preds:
+        verifier_w_example_model_preds_by_id[d['orig_d']['id']].append(d)
+    
+    all_accs = []
+    for id, model_preds in verifier_w_example_model_preds_by_id.items():
+        acc = []
+        gold_positive_preds_scores = [d['generations'][0]['scores'][1] - d['generations'][0]['scores'][0] for d in model_preds if d['demonstration'].strip() == 'yes']
+        gold_negative_preds_scores = [d['generations'][0]['scores'][1] - d['generations'][0]['scores'][0] for d in model_preds if d['demonstration'].strip() == 'no']
+        for pos_score, neg_score in product(gold_positive_preds_scores, gold_negative_preds_scores):
+            if pos_score > neg_score:
+                acc.append(1)
+            else:
+                acc.append(0)
+        all_accs.append(np.mean(acc))
+    metrics['verifier_w_examples_acc'] = np.mean(all_accs)
     return metrics
+            
+    # return metrics
 
 if __name__ == '__main__':
+    import pandas as pd
+    ds = []
     # eval_path = 'data/ai2_1102data_dummy_perfect.json'
-    eval_path = 'model_preds/temperature=0.80_n=1_step=0.json'
-    metrics = eval_target(eval_path)
-    # metrics = eval_target('../automatic/model_preds/proposer/temperature=0.80_n=8_step=40.json')
-    print(metrics)
+    for step in [0, 100, 200, 300, 400, 500, 600, 700]:
+        print(step)
+        eval_path = '../../model_preds/temperature=0.80_n=1_step=%d.json' % step
+        metrics = eval_target(eval_path)
+        ds.append(metrics)
+    df = pd.DataFrame(ds)
+    print(df)
