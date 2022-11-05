@@ -17,6 +17,7 @@ def get_rep(
     pair: str = "",
     save_folder=None,
 ):
+    print(len(pos), len(neg))
     if save_folder is None:
         save_folder = os.path.join("end2end_jobs", pair)
         print(save_folder)
@@ -39,4 +40,4 @@ if __name__ == "__main__":
     neg = [imdb[i]["text"] for i in range(imdb.num_rows) if imdb[i]["label"] == 0]
     pos = [imdb[i]["text"] for i in range(imdb.num_rows) if imdb[i]["label"] == 1]
 
-    get_rep(pos[:100], neg[:100], pair="sentiment_analysis_small")
+    get_rep(pos[:50], neg[:50], pair="sentiment_analysis_small_1")

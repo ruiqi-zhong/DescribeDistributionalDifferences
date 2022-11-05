@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import json
 import os
 import pickle as pkl
@@ -16,11 +17,11 @@ from contextlib import redirect_stdout
 
 import shap
 
-from shap_utils.utils import text
-
+from shap_utils.utils import text as get_text
+from rz_lexical_diversity import lexical_diversity
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
-pretrain_model = "roberta-large"
+pretrain_model = "roberta-base"
 
 # Look at force plot for SVG, probaby look at only the red highlight? except make it blue
 
@@ -144,6 +145,7 @@ def train(cv_dict):
     optimizer = AdamW(optimizer_grouped_parameters, lr=5e-5)
     scheduler = get_linear_schedule_with_warmup(optimizer, 400, NUM_STEPS)
     tokenizer = AutoTokenizer.from_pretrained(pretrain_model)
+    # criterion = nn.NLLLoss()
     model.train()
 
     auc_score = 0
@@ -169,152 +171,142 @@ def train(cv_dict):
             scheduler.step()
             optimizer.zero_grad()
 
-        # early stopping criteria
-        if step % 10 == 0:
-            fpr, tpr, thresholds = roc_curve(
-                labels.detach().cpu().numpy(), logits.detach().cpu().numpy()[:, 1]
-            )
-            new_auc_score = auc(fpr, tpr)
-            print(new_auc_score)
-            if new_auc_score <= auc_score:
-                no_improv += 1
-            else:
-                no_improv = 0
-                auc_score = new_auc_score
-
-            if no_improv >= PATIENCE:
-                break
-    torch.save(model.state_dict(), "roberta-attention.pt")
     return model, tokenizer
 
 
-def evaluate(texts, use_shap: bool, model, tokenizer):
+def evaluate(texts, use_shap: bool, model, tokenizer, top_p):
     model.eval()
-    if not use_shap:
-        all_logits, all_highlights = [], []
-        cur_start = 0
-        while cur_start < len(texts):
-            texts_ = texts[cur_start : cur_start + bsize]
-            inputs = tokenizer(
-                texts_,
-                return_tensors="pt",
-                truncation=True,
-                max_length=max_length,
-                padding=True,
-            ).to(device)
-            model_output_dict = model(**inputs)
-            logits = lsm(model_output_dict["logits"].detach().cpu()).numpy().tolist()
-            all_highlights.extend(model_output_dict["highlight"])
-            all_logits.extend(logits)
-            cur_start += bsize
-        assert len(all_logits) == len(texts)
+    all_logits, all_highlights = [], []
+    cur_start = 0
+    while cur_start < len(texts):
+        print(cur_start, len(texts))
+        texts_ = texts[cur_start : cur_start + bsize]
+        inputs = tokenizer(
+            texts_,
+            return_tensors="pt",
+            truncation=True,
+            max_length=max_length,
+            padding=True,
+        ).to(device)
+        model_output_dict = model(**inputs)
+        logits = lsm(model_output_dict["logits"].detach().cpu()).numpy().tolist()
+        all_highlights.extend(model_output_dict["highlight"])
+        all_logits.extend(logits)
+        cur_start += bsize
+    assert len(all_logits) == len(texts)
 
-        all_spans = [get_spans(tokenizer, text) for text in texts]
-        assert len(all_spans) == len(all_highlights)
-        for a, b in zip(all_spans, all_highlights):
-            assert len(a) == len(b) or len(a) >= max_length
+    all_spans = [get_spans(tokenizer, text) for text in texts]
+    assert len(all_spans) == len(all_highlights)
+    for a, b in zip(all_spans, all_highlights):
+        assert len(a) == len(b) or len(a) >= max_length
 
-        highlights = [
-            {s: h for s, h in zip(spans, highlights) if s != (0, 0)}
-            for spans, highlights in zip(all_spans, all_highlights)
-        ]
+    highlights = [
+        {s: h for s, h in zip(spans, highlights) if s != (0, 0)}
+        for spans, highlights in zip(all_spans, all_highlights)
+    ]
 
-        return {"logits": np.array(all_logits), "highlights": highlights}
-    else:
-
-        def predict(x):
-            # TODO: need to set indices based off of positive or negative results
-            # print("x.toList(): ", x.tolist())
-            inputs = tokenizer(
-                x.tolist(),
-                return_tensors="pt",
-                truncation=True,
-                max_length=max_length,
-                padding=True,
-            ).to(device)
-
-            model_output_dict = model(**inputs)
-            logits = lsm(model_output_dict["logits"].detach().cpu()).numpy()
-            logits = logits[:, 1]
-            return logits
-
-        all_logits, all_highlights = [], []
-        cur_start = 0
-        explainer = shap.Explainer(predict, tokenizer)
-        out = {}
-        while cur_start < len(texts):
-            texts_ = texts[cur_start : cur_start + bsize]
-            shap_values = explainer(texts_)
-            shap_text = text(shap_values)
-
-            out = out | shap_text
-            inputs = tokenizer(
-                texts_,
-                return_tensors="pt",
-                truncation=True,
-                max_length=max_length,
-                padding=True,
-            ).to(device)
-            # print("inputs: ", inputs)
-            model_output_dict = model(**inputs)
-            logits = lsm(model_output_dict["logits"].detach().cpu()).numpy().tolist()
-            for i in range(len(logits)):
-                if texts_[i] in out:
-                    out[texts_[i]]["logits"] = logits[i]
-
-            cur_start += bsize
-
-        return out
+    return {"logits": np.array(all_logits), "highlights": highlights}
 
 
-def train_and_eval(cv_dict, use_shap):
+def calculate_shapley_values(models, tokenizer, texts, text_to_model):
+    bsize = 1
+
+    model = models[0]
+
+    def predict(x):
+        # TODO: need to set indices based off of positive or negative results
+        # print("x.toList(): ", x.tolist())
+        inputs = tokenizer(
+            x.tolist(),
+            return_tensors="pt",
+            truncation=True,
+            max_length=max_length,
+            padding=True,
+        ).to(device)
+        model_output_dict = model(**inputs)
+        logits = lsm(model_output_dict["logits"].detach().cpu()).numpy()
+        logits = logits[:, 1]
+        return logits
+
+    sorted_dict = OrderedDict()
+    explainer = shap.Explainer(predict, tokenizer)
+    cur_start = 0
+    while cur_start < len(texts):
+
+        texts_ = texts[cur_start : cur_start + bsize]
+        model = models[text_to_model[texts_[0]]]
+        # print("sentence: ", texts_[0], "model index: ", text_to_model[texts_[0]])
+        shap_values = explainer(texts_)
+        shap_text = get_text(shap_values)
+
+        for t in shap_text:
+            sorted_dict[t] = shap_text[t]["span"]
+        cur_start += bsize
+
+    return sorted_dict
+
+
+def get_lexical_diversity(pos_dict, neg_dict):
+    pos_sorted = OrderedDict()
+    neg_sorted = OrderedDict()
+
+    for k, v in sorted(pos_dict.items(), key=lambda item: item[1], reverse=True):
+        pos_sorted[k] = v
+    for k, v in sorted(neg_dict.items(), key=lambda item: item[1], reverse=True):
+        neg_sorted[k] = v
+
+    As = [k for k in pos_sorted]
+    Bs = [k for k in neg_sorted]
+
+    out = {}
+    for i in [0.05, 0.2, 1.0]:
+        pos, neg = lexical_diversity(As, Bs, top_p=i, num_sentences=5)
+        out[str(i)] = {"pos": pos, "neg": neg}
+
+    return out
+
+
+def train_and_eval(cv_dict, use_shap, top_p):
     model, tokenizer = train(cv_dict)
-    if use_shap:
-        pos_eval_dict = evaluate(cv_dict["test_pos"], use_shap, model, tokenizer)
-        neg_eval_dict = evaluate(cv_dict["test_neg"], use_shap, model, tokenizer)
-        pos_text, pos_spans, pos_logits = [], [], []
-        neg_text, neg_spans, neg_logits = [], [], []
-        for text in pos_eval_dict:
-            if "logits" in pos_eval_dict[text]:
-                pos_text.append(text)
-                pos_spans.append(pos_eval_dict[text]["span"])
-                pos_logits.append(pos_eval_dict[text]["logits"][1])
 
-        for text in neg_eval_dict:
-            if "logits" in neg_eval_dict[text]:
-                neg_text.append(text)
-                neg_spans.append(neg_eval_dict[text]["span"])
-                neg_logits.append(neg_eval_dict[text]["logits"][0])
+    test_data_dict = list(
+        chain(
+            [{"input": x, "label": 1} for x in cv_dict["test_pos"]],
+            [{"input": x, "label": 0} for x in cv_dict["test_neg"]],
+        )
+    )
 
-        return {
-            "test_pos_scores": pos_logits,
-            "test_neg_scores": neg_logits,
-            "test_pos_spans": pos_spans,
-            "test_neg_spans": neg_spans,
-            "test_pos_text": pos_text,
-            "test_neg_text": neg_text,
-        }
-
-    pos_eval_dict = evaluate(cv_dict["test_pos"], use_shap, model, tokenizer)
+    pos_eval_dict = evaluate(cv_dict["test_pos"], use_shap, model, tokenizer, top_p)
     pos_logits, pos_highlights = (
         pos_eval_dict["logits"][:, 1],
         pos_eval_dict["highlights"],
     )
-    neg_eval_dict = evaluate(cv_dict["test_neg"], use_shap, model, tokenizer)
+    neg_eval_dict = evaluate(cv_dict["test_neg"], use_shap, model, tokenizer, top_p)
     neg_logits, neg_highlights = (
         neg_eval_dict["logits"][:, 0],
         neg_eval_dict["highlights"],
     )
+    all_logits = []
 
-    return {
-        "test_pos_scores": pos_logits,
-        "test_neg_scores": neg_logits,
-        "test_pos_highlight": pos_highlights,
-        "test_neg_highlight": neg_highlights,
-    }
+    all_logits.extend(pos_eval_dict["logits"])
+    all_logits.extend(neg_eval_dict["logits"])
+
+    labels = [d["label"] for d in test_data_dict]
+    fpr, tpr, thresholds = roc_curve(np.array(labels), np.array(all_logits)[:, 1])
+    auc_roc = auc(fpr, tpr)
+
+    return (
+        {
+            "test_pos_scores": pos_logits,
+            "test_neg_scores": neg_logits,
+            "auc_roc": auc_roc,
+        },
+        model,
+        tokenizer,
+    )
 
 
-def eval_only(pos, neg, use_shap, pathname):
+def eval_only(pos, neg, use_shap):
     model = RoBERTaSeq().to(device)
     tokenizer = AutoTokenizer.from_pretrained(
         pretrain_model,
@@ -323,55 +315,59 @@ def eval_only(pos, neg, use_shap, pathname):
     for fold_idx, cv_dict in enumerate(cv(pos, neg, NUM_FOLD)):
         if use_shap:
             pos_eval_out = evaluate(cv_dict["test_pos"], use_shap, model, tokenizer)
+            print("breaking...")
             out = out | pos_eval_out
+            break
 
     return out
 
 
-def return_extreme_values(pos, neg, use_shap: bool):
+def return_extreme_values(pos, neg, use_shap: bool, top_p=1.0):
     pos2score, neg2score = {}, {}
     pos2highlight, neg2highlight = {}, {}
+    text2model = {}
+    auc_roc = []
 
-    if use_shap:
-        for fold_idx, cv_dict in enumerate(cv(pos, neg, NUM_FOLD)):
-            test_scores = train_and_eval(cv_dict, use_shap)
+    models = []
+    for fold_idx, cv_dict in enumerate(cv(pos, neg, NUM_FOLD)):
+        test_scores, model, tokenizer = train_and_eval(cv_dict, use_shap, top_p=top_p)
+        models.append(model)
+        auc_roc.append(test_scores["auc_roc"])
+        for pos_text, score in zip(cv_dict["test_pos"], test_scores["test_pos_scores"]):
+            pos2score[pos_text] = score
+            text2model[pos_text] = fold_idx
+        for neg_text, score in zip(
+            cv_dict["test_neg"],
+            test_scores["test_neg_scores"],
+        ):
+            neg2score[neg_text] = score
+            text2model[neg_text] = fold_idx
 
-            for pos_text, span, score in zip(
-                test_scores["test_pos_text"],
-                test_scores["test_pos_spans"],
-                test_scores["test_pos_scores"],
-            ):
-                pos2score[pos_text] = score
-                pos2highlight[pos_text] = span
+    pairs = get_lexical_diversity(pos2score, neg2score)
 
-            for neg_text, span, score in zip(
-                test_scores["test_neg_text"],
-                test_scores["test_neg_spans"],
-                test_scores["test_neg_scores"],
-            ):
-                neg2score[neg_text] = score
-                neg2highlight[neg_text] = span
+    out = {}
+    # pair = 0.05, 0.20, or 1.0
+    for pair in pairs:
+        pos = pairs[pair]["pos"]
+        neg = pairs[pair]["neg"]
 
-    else:
-        for fold_idx, cv_dict in enumerate(cv(pos, neg, NUM_FOLD)):
-            test_scores = train_and_eval(cv_dict, use_shap)
-            for pos_text, score, highlight in zip(
-                cv_dict["test_pos"],
-                test_scores["test_pos_scores"],
-                test_scores["test_pos_highlight"],
-            ):
-                pos2score[pos_text] = score
-                pos2highlight[pos_text] = highlight
-            for neg_text, score, highlight in zip(
-                cv_dict["test_neg"],
-                test_scores["test_neg_scores"],
-                test_scores["test_neg_highlight"],
-            ):
-                neg2score[neg_text] = score
-                neg2highlight[neg_text] = highlight
+        pos_shapley_highlights = calculate_shapley_values(
+            models, tokenizer, pos, text2model
+        )
+        neg_shapley_highlights = calculate_shapley_values(
+            models, tokenizer, neg, text2model
+        )
+
+        out[str(pair)] = {
+            "pos2highlight": pos_shapley_highlights,
+            "neg2highlight": neg_shapley_highlights,
+            "pos": pos,
+            "neg": neg,
+        }
+
     return {
         "pos2score": pos2score,
         "neg2score": neg2score,
-        "pos2highlight": pos2highlight,
-        "neg2highlight": neg2highlight,
+        "top_p": out,
+        "auc_roc": auc_roc,
     }
