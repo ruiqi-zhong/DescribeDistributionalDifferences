@@ -2,6 +2,8 @@ import numpy as np
 import json
 import tqdm
 from preprocess import tok_subspan
+from collections import Counter
+
 
 
 def clamp_in_range(ls, lowerbound=-2, upperbound=2):
@@ -16,13 +18,13 @@ def update_ground_truth():
         1: ['is a plot summary', 'is a plot summary of a film']
     }
 
-    data = json.load(open('old_data/test_complete_data.json'))
+    data = json.load(open('models/old_data/test_complete_data.json'))
 
     for i, golds in updated_ground_truth.items():
         data[i]['demonstrations'] = golds
     for i in range(len(data)):
         data[i]['id'] = i
-    json.dump(data, open('old_data/test_complete_data.json', 'w'))
+    json.dump(data, open('models/old_data/test_complete_data.json', 'w'))
 
 
 proposer_template = open('models/templates/ai2proposer_full.txt').read()
@@ -57,14 +59,14 @@ def create_proposer_prompt_completion_from_dict(d, num_data=10, num_incontext_sa
 
 
 def create_proposer_data():
-    test_dicts = json.load(open('old_data/test_complete_data.json', 'r'))
+    test_dicts = json.load(open('models/old_data/test_complete_data.json', 'r'))
     all_test = []
     for d in tqdm.tqdm(test_dicts):
-        for x in create_proposer_prompt_completion_from_dict(d):
+        for x in create_proposer_prompt_completion_from_dict(d, num_data=50):
             x['id'] = d['id']
             all_test.append(x)
 
-    train_dicts = json.load(open('old_data/train_complete_data.json', 'r'))
+    train_dicts = json.load(open('models/old_data/train_complete_data.json', 'r'))
     all_train = []
     for d in tqdm.tqdm(train_dicts):
         all_train.extend(create_proposer_prompt_completion_from_dict(d, num_data=2))
@@ -106,15 +108,15 @@ def create_paired_verifier_prompt_completion_from_dict(d, num_data=10):
     
 
 def create_paired_verifier_data():
-    train_dicts = json.load(open('old_data/train_complete_data.json', 'r'))
+    train_dicts = json.load(open('models/old_data/train_complete_data.json', 'r'))
     all_train = []
 
     for d in tqdm.tqdm(train_dicts):
         all_train.extend(create_paired_verifier_prompt_completion_from_dict(d, num_data=5))
-    test_dicts = json.load(open('old_data/test_complete_data.json', 'r'))
+    test_dicts = json.load(open('models/old_data/test_complete_data.json', 'r'))
     all_test = []
     for d in tqdm.tqdm(test_dicts):
-        for x in create_paired_verifier_prompt_completion_from_dict(d, num_data=10):
+        for x in create_paired_verifier_prompt_completion_from_dict(d, num_data=50):
             x['id'] = d['id']
             all_test.append(x)
     
@@ -125,12 +127,12 @@ def create_paired_verifier_data():
     return all_data
 
 
-verifier_w_examples_template = open('models/templates/ai2verifier_w_examples.txt').read()
-def construct_verifier_w_examples_prompt(positive_sample, negative_sample, hypothesis, target_sample):
+VERIFIER_W_EXAMPLES_TEMPLATE = open('models/templates/ai2verifier_w_examples.txt').read()
+def construct_verifier_w_examples_prompt(positive_sample, negative_sample, hypothesis, target_sample, verifier_w_examples_template=VERIFIER_W_EXAMPLES_TEMPLATE):
     prompt = verifier_w_examples_template.format(positive_sample=positive_sample, negative_sample=negative_sample, hypothesis=hypothesis, target_sample=target_sample)
     return prompt
 
-def create_verifier_w_examples_prompt_completion_from_dict(d, num_data=10):
+def create_verifier_w_examples_prompt_completion_from_dict(d, num_data=10, template=VERIFIER_W_EXAMPLES_TEMPLATE):
     hypothesis = d['demonstrations'][0]
     pos_sentences = d['pos']
     neg_sentences = d['neg']
@@ -149,7 +151,7 @@ def create_verifier_w_examples_prompt_completion_from_dict(d, num_data=10):
         if target_sample == positive_sample or target_sample == negative_sample:
             continue
 
-        prompt = construct_verifier_w_examples_prompt(positive_sample, negative_sample, hypothesis, target_sample)
+        prompt = construct_verifier_w_examples_prompt(positive_sample, negative_sample, hypothesis, target_sample, verifier_w_examples_template=template)
         completion = 'yes' if answer_yes else 'no'
         d = {'prompt': prompt, 'completion': completion}
         if prompt not in existing_data:
@@ -159,15 +161,15 @@ def create_verifier_w_examples_prompt_completion_from_dict(d, num_data=10):
     return data
 
 
-def create_verifier_w_examples_data():
-    train_dicts = json.load(open('old_data/train_complete_data.json', 'r'))
+def create_verifier_w_examples_data(template=VERIFIER_W_EXAMPLES_TEMPLATE):
+    train_dicts = json.load(open('models/old_data/train_complete_data.json', 'r'))
     all_train = []
     for d in tqdm.tqdm(train_dicts):
-        all_train.extend(create_verifier_w_examples_prompt_completion_from_dict(d, num_data=5))
-    test_dicts = json.load(open('old_data/test_complete_data.json', 'r'))
+        all_train.extend(create_verifier_w_examples_prompt_completion_from_dict(d, num_data=5, template=template))
+    test_dicts = json.load(open('models/old_data/test_complete_data.json', 'r'))
     all_test = []
     for d in tqdm.tqdm(test_dicts):
-        for x in create_verifier_w_examples_prompt_completion_from_dict(d, num_data=10):
+        for x in create_verifier_w_examples_prompt_completion_from_dict(d, num_data=50, template=template):
             x['id'] = d['id']
             all_test.append(x)
     
@@ -196,21 +198,39 @@ def create_perfect_dummy(data_path):
 if __name__ == '__main__':
     # update_ground_truth()
 
-    name2data = {
-        'proposer': create_proposer_data(),
-        'paired_verifier': create_paired_verifier_data(),
-        'verifier_w_examples': create_verifier_w_examples_data()
-    }
+    # tune_prompt_data = []
+    # for template_fname in ['ai2verifier_w_examples_1.txt', 'ai2verifier_w_examples_2.txt', 'ai2verifier_w_examples_3.txt', 'ai2verifier_w_examples.txt']:
+    #     np.random.seed(0)
+    #     template = open('models/templates/' + template_fname).read()
+    #     eval_data = create_verifier_w_examples_data(template)['eval']
+    #     for d in eval_data:
+    #         d['template'] = template_fname
+    #         tune_prompt_data.append(d)
+    # tune_prompt_data = {'train': [], 'eval': tune_prompt_data}
+    # json.dump(tune_prompt_data, open('models/data/tune_prompt_data.json', 'w'))
+    # exit(0)
 
-    all_data = {}
-    for key in ['train', 'eval']:
-        key_data = []
-        for name, data in name2data.items():
-            for d in data[key]:
-                d['name'] = name
-                key_data.append(d)
-        all_data[key] = key_data
-    # json.dump(all_data, open('models/data/ai2_1102data.json', 'w'))
+
+    # finetuning data_for 1102
+    # name2data = {
+    #     'proposer': create_proposer_data(),
+    #     'paired_verifier': create_paired_verifier_data(),
+    #     'verifier_w_examples': create_verifier_w_examples_data()
+    # }
+
+    # all_data = {}
+    # for key in ['train', 'eval']:
+    #     key_data = []
+    #     for name, data in name2data.items():
+    #         for d in data[key]:
+    #             d['name'] = name
+    #             key_data.append(d)
+    #     all_data[key] = key_data
+    # print(Counter([d['name'] for d in all_data['train']]))
+    # json.dump(all_data, open('models/data/ai2_1104data.json', 'w'))
+
+    all_data = json.load(open('models/data/ai2_1104data.json', 'r'))
+    print(Counter([d['name'] for d in all_data['eval']]))
 
     # data_path = 'models/data/ai2_1102data.json'
     # data = create_perfect_dummy(data_path)

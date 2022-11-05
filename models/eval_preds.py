@@ -23,7 +23,6 @@ def binary(logit):
         return 'no'
     else:
         return 'yes'
-
 def eval_proposer(model_preds):
     id2results = {}
     id2models_preds = defaultdict(list)
@@ -67,12 +66,7 @@ def eval_proposer(model_preds):
     return metrics
 
 
-def eval_target(path):
-    model_preds = json.load(open(path, 'r'))
-    metrics = eval_proposer([d for d in model_preds if d['orig_d']['name'] == 'proposer'])
-
-    # metrics['paired_verifier_acc'] = np.mean([binary(d['generations'][0]['scores']) == d['demonstration'].strip() for d in model_preds if d['orig_d']['name'] == 'paired_verifier'])
-
+def eval_paired_verifier(model_preds):
     paired_verifier_model_preds = [d for d in model_preds if d['orig_d']['name'] == 'paired_verifier']
     paired_verifier_model_preds_by_id = defaultdict(list)
     for d in paired_verifier_model_preds:
@@ -84,12 +78,13 @@ def eval_target(path):
         for d in paired_verifier_model_preds_by_id[id]:
             accs.append(binary(d['generations'][0]['scores']) == d['demonstration'].strip())
         all_accs.append(np.mean(accs))
-    metrics['paired_verifier_acc'] = np.mean(all_accs)
-    verifier_w_example_model_preds = [d for d in model_preds if d['orig_d']['name'] == 'verifier_w_examples']
+    return np.mean(all_accs)
+
+def eval_verifier_w_examples(model_preds):
     verifier_w_example_model_preds_by_id = defaultdict(list)
-    for d in verifier_w_example_model_preds:
+    for d in model_preds:
         verifier_w_example_model_preds_by_id[d['orig_d']['id']].append(d)
-    
+
     all_accs = []
     for id, model_preds in verifier_w_example_model_preds_by_id.items():
         acc = []
@@ -101,19 +96,56 @@ def eval_target(path):
             else:
                 acc.append(0)
         all_accs.append(np.mean(acc))
-    metrics['verifier_w_examples_acc'] = np.mean(all_accs)
+    return np.mean(all_accs)
+
+
+
+def eval_target(path):
+    model_preds = json.load(open(path, 'r'))
+    metrics = eval_proposer([d for d in model_preds if d['orig_d']['name'] == 'proposer'])
+
+    paired_verifier_model_preds = [d for d in model_preds if d['orig_d']['name'] == 'paired_verifier']
+    metrics['paired_verifier_acc'] = eval_paired_verifier(paired_verifier_model_preds)
+
+    verifier_w_example_model_preds = [d for d in model_preds if d['orig_d']['name'] == 'verifier_w_examples']
+    metrics['verifier_w_examples_acc'] = eval_verifier_w_examples(verifier_w_example_model_preds)
     return metrics
-            
-    # return metrics
+
 
 if __name__ == '__main__':
     import pandas as pd
+
+    model_preds = json.load(open('../../model_preds/tune_prompts/eval_generations-temperature=0.01_n=1_step=3000.json', 'r'))
+    model_preds_grouped_by_templated_name = defaultdict(list)
+    for d in model_preds:
+        model_preds_grouped_by_templated_name[d['orig_d']['template']].append(d)
+    # for templated_name in model_preds_grouped_by_templated_name:
+    #     model_preds = model_preds_grouped_by_templated_name[templated_name]
+    #     print(len(model_preds))
+    #     print(model_preds[0]['prompt'])
+    #     input()
+    #     print(templated_name, eval_verifier_w_examples(model_preds_grouped_by_templated_name[templated_name]))
+    # exit(0)
+
     ds = []
     # eval_path = 'data/ai2_1102data_dummy_perfect.json'
-    for step in [0, 100, 200, 300, 400, 500, 600, 700]:
+    for step in [0, 100, 200, 300, 400, 500]:
         print(step)
-        eval_path = '../../model_preds/temperature=0.80_n=1_step=%d.json' % step
+        # eval_path = '../../model_preds/unified_1102_tk/temperature=0.80_n=1_step=%d.json' % step
+        eval_path = '../../unified_1104tk/temperature=0.80_n=1_step=%d.json' % step
         metrics = eval_target(eval_path)
+        metrics['step'] = step
+        metrics['name'] = 'orig'
         ds.append(metrics)
+
+    # for step in [0, 100, 200, 300, 400, 500, 600, 700]:
+    #     print(step)
+    #     eval_path = '../../model_preds/unified_1102_tk_small_bsize/temperature=0.80_n=1_step=%d.json' % step
+    #     metrics = eval_target(eval_path)
+    #     metrics['step'] = step
+    #     metrics['name'] = 'small_bsize'
+    #     ds.append(metrics)
     df = pd.DataFrame(ds)
     print(df)
+
+
