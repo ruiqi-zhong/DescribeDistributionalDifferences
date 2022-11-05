@@ -1,7 +1,7 @@
 import numpy as np
 import json
 import tqdm
-from preprocess import tok_subspan
+from models.preprocess import tok_subspan
 from collections import Counter
 
 

@@ -7,7 +7,11 @@ import math
 import scipy.stats as stats
 from sklearn.linear_model import LogisticRegression
 import numpy as np
+from models.engine import Engine
+import random
 
+
+DEBUG = True
 
 VERIFY_HYP_BLOCK_SIZE = 32
 
@@ -30,26 +34,30 @@ def r_confidence_interval(r, alpha, n):
     return (z_to_r(lo), z_to_r(hi))
 
 
-def calculate_corr(x, y, alpha=1e-4):
-    corr, p = pearsonr(x, y)
+def calculate_corr(x, y, alpha=1e-5):
+    x, y = np.array(x), np.array(y)
     n = len(x)
+    corr, p = pearsonr(x, y)
     lo, hi = r_confidence_interval(corr, alpha, n)
-    return {'corr': corr, 'p': p, 'lo': lo, 'hi': hi, 'n': n}
+    result = {'corr': corr, 'p': p, 'lo': lo, 'hi': hi, 'n': n}
+    return result
 
 
 def search_clf_w_sparse_positive_weights(X, Y, K):
     initial_C = 0.01
+    X = np.array(X)
+
     # weaker and weaker regularization
     all_Cs = [initial_C * (2 ** i) for i in range(13)]
-    for C in all_Cs:
+    for clf_round, C in enumerate(all_Cs):
+        print('clf round %d with C %f' % (clf_round, C))
         clf = LogisticRegression(C=C, solver='liblinear', max_iter=1000)
         clf.fit(X, Y)
         if np.sum(clf.coef_ > 0) >= K:
             break
+
     # return positive idxes
     return np.where(clf.coef_ > 0)[1]
-    
-
 
 class DistributionPairInstance:
 
@@ -65,9 +73,9 @@ class DistributionPairInstance:
         self.orig_neg2scores = neg2scores
         self.orig_sent2membership = {}
         for sent in pos2scores:
-            self.orig_sent2membership[sent] = 1
+            self.orig_sent2membership[sent] = 1.
         for sent in neg2scores:
-            self.orig_sent2membership[sent] = 0
+            self.orig_sent2membership[sent] = 0.
 
         self.engine = engine
 
@@ -94,6 +102,7 @@ class DistributionPairInstance:
                     d[sent] = self.current_sent2residual[sent]
 
         else:
+            self.current_sent2residual = {}
             for sent in self.current_pos2representative:
                 self.current_sent2residual[sent] = 1.0
             for sent in self.current_neg2representative:
@@ -101,12 +110,17 @@ class DistributionPairInstance:
 
     def get_hypotheses(self):
         proposed_hypotheses = []
-        propser_args = []
+        proposer_args = []
         for p in self.top_fraction:
             for _ in range(self.num_hyps):
-                pos, neg = lexical_diversity(self.current_pos2representative, self.current_neg2representative, top_p=p)
+                sorted_pos = sorted(self.current_pos2representative, key=self.current_pos2representative.get, reverse=True)
+                sorted_neg = sorted(self.current_neg2representative, key=self.current_neg2representative.get, reverse=True)
+                pos, neg = lexical_diversity(sorted_pos, sorted_neg, top_p=p)
                 proposer_args.append({'pos_sents': pos, 'neg_sents': neg})
         raw_nl_hyps = self.engine.propose_hypotheses(proposer_args)
+        raw_nl_hyps = [h for h in raw_nl_hyps if h is not None]
+        if DEBUG:
+            raw_nl_hyps = ['hyp %d' % random.randint(0, 10) for _ in range(len(raw_nl_hyps))]
 
         ### TODO this needs to be debugged; currently haven't tested it
         for hypothesis, proposer_arg in zip(raw_nl_hyps, proposer_args):
@@ -117,7 +131,7 @@ class DistributionPairInstance:
                 paired_verifier_args.append(arg)
                 arg = {'positive_sample': neg_sent, 'negative_sample': pos_sent, 'hypothesis': hypothesis, 'expected_polarity': -1}
                 paired_verifier_args.append(arg)
-            all_scores = self.engine.verify_hypotheses(paired_verifier_args)
+            all_scores = self.engine.verify_paired(paired_verifier_args)
             assert len(all_scores) == len(paired_verifier_args)
             for d, s in zip(paired_verifier_args, all_scores):
                 d['credit'] = d['expected_polarity'] * s
@@ -126,9 +140,18 @@ class DistributionPairInstance:
             best_pos_sent = max(pos_sent2credit, key=pos_sent2credit.get)
             neg_sent2credit = {neg_sent: np.mean([d['credit'] for d in paired_verifier_args if d['negative_sample'] == neg_sent]) for neg_sent in neg_sents}
             best_neg_sent = max(neg_sent2credit, key=neg_sent2credit.get)
-            hypothesis_confidence = (np.mean(pos_sent2credit.values()) + np.mean(neg_sent2credit.values())) / 2
-            hypothesis = {'hypothesis': hypothesis, 'pos_sent': best_pos_sent, 'neg_sent': best_neg_sent, 'confidence': hypothesis_confidence, 'sent2score': {}, 'fullly_computed': False, '+': True}
-            proposed_hypotheses.append(hypothesis)
+            hypothesis_confidence = (np.mean(list(pos_sent2credit.values())) + np.mean(list(neg_sent2credit.values()))) / 2
+            hypothesis_dict = {
+                'hypothesis': hypothesis, 
+                'pos_sent': best_pos_sent, 
+                'neg_sent': best_neg_sent, 
+                'confidence': hypothesis_confidence, 
+                'sent2score': {}, 
+                'fullly_computed': False, 
+                '+': True,
+                'provenance': proposer_arg
+            }
+            proposed_hypotheses.append(hypothesis_dict)
         self.all_hypotheses.extend(proposed_hypotheses)
         return proposed_hypotheses
 
@@ -144,7 +167,7 @@ class DistributionPairInstance:
             hypothesis['+'] = False
             pred = [-x for x in pred]
 
-        residul_corr = calculate_corr(gold, pred)
+        residual_corr = calculate_corr(gold, pred)
         return residual_corr
     
     # rule out weak hypotheses based on the current residual
@@ -192,6 +215,7 @@ class DistributionPairInstance:
 
 
     def calculate_residual(self):
+        print('Calculating residual at round %d' % self.current_round)
         hypotheses = []
         for h in self.all_hypotheses:
             if not h['fullly_computed']:
@@ -201,6 +225,8 @@ class DistributionPairInstance:
         sents = list(self.orig_sent2membership)
         Y = np.array([self.orig_sent2membership[sent] for sent in sents])
         X = np.array([[h['sent2score'][sent] * (1 if h['+'] else -1) for h in hypotheses] for sent in sents])
+        
+        print('Selecting features')
         selected_feature_dims = search_clf_w_sparse_positive_weights(X, Y, self.current_round + 1)
         selected_X = X[:, selected_feature_dims]
         clf = LogisticRegression(penalty='l2', C=1.0, solver='lbfgs', max_iter=1000)
@@ -215,3 +241,58 @@ class DistributionPairInstance:
         self.get_best_hypotheses_active(hypotheses)
         self.calculate_residual()
         self.current_round += 1
+
+if __name__ == '__main__':
+    from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
+    import torch
+    model_name = 't5-small'
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
+    model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    model.to(device)
+    model.eval()
+    model_tokenizer = (model, tokenizer)
+    engine = Engine(model_tokenizer)
+
+    # pos2scores = {
+    #     'I love this movie': 1,
+    #     'Highly recommended': 0.8,
+    #     'I like this movie': 0.7,
+    #     'I want to watch this movie again. so good': 0.92,
+    #     'This movie is great': 0.9,
+    #     'I would recommend this movie to other people': 0.8,
+    #     'sooooo good': 0.9,
+    #     'kinda good': 0.5,
+    #     'kinda nice': 0.5,
+    #     'a reasonable movie': 0.5,
+    #     'a reasonable plot': 0.5,
+    # }
+
+    # neg2scores = {
+    #     'I hate this movie': 1,
+    #     'I don\'t like this movie': 0.8,
+    #     'I don\'t want to watch this movie again': 0.7,
+    #     'I don\'t recommend this movie': 0.6,
+    #     'This movie is terrible': 0.9,
+    #     'I would not recommend this movie to other people': 0.8,
+    #     'sooooo bad': 0.9,
+    #     'kinda bad': 0.5,
+    #     'kinda boring': 0.5,
+    #     'a so-so movie': 0.5,
+    #     'a so-so plot': 0.5,
+    # }
+    pos2scores = {
+        'pos neg %.2f' % f: f for f in np.arange(0.5, 1.0, 0.002)
+    }
+    neg2scores = {
+        'neg pos %.2f' % f: f for f in np.arange(0.5, 1.0, 0.002)
+    }
+
+    dp_instance = DistributionPairInstance(pos2scores, neg2scores, engine)
+
+    dp_instance.one_step()
+    dp_instance.one_step()
+
+
+
+
