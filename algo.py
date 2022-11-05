@@ -9,7 +9,8 @@ from sklearn.linear_model import LogisticRegression
 import numpy as np
 from models.engine import Engine
 import random
-
+import tqdm
+import pickle as pkl
 
 DEBUG = True
 
@@ -49,15 +50,24 @@ def search_clf_w_sparse_positive_weights(X, Y, K):
 
     # weaker and weaker regularization
     all_Cs = [initial_C * (2 ** i) for i in range(13)]
-    for clf_round, C in enumerate(all_Cs):
-        print('clf round %d with C %f' % (clf_round, C))
-        clf = LogisticRegression(C=C, solver='liblinear', max_iter=1000)
+    print('Searching for the correct regularization strength...')
+    pbar = tqdm.tqdm(enumerate(all_Cs))
+    for clf_round, C in pbar:
+        pbar.set_description(f'Strength: {C}')
+        clf = LogisticRegression(C=C, solver='liblinear', max_iter=1000, penalty='l1')
         clf.fit(X, Y)
         if np.sum(clf.coef_ > 0) >= K:
             break
 
     # return positive idxes
-    return np.where(clf.coef_ > 0)[1]
+    coef = clf.coef_[0]
+    dim_sorted = sorted(range(len(coef)), key=lambda i: coef[i], reverse=True)
+    top_K_dims = dim_sorted[:K]
+    selected_dims = [i for i in top_K_dims if coef[i] > 0]
+    if len(selected_dims) == 0:
+        return [0]
+    return selected_dims
+
 
 class DistributionPairInstance:
 
@@ -67,7 +77,8 @@ class DistributionPairInstance:
         neg2scores, 
         engine, 
         top_fraction=None,
-        num_hyps=20
+        num_hyps=20,
+        max_round=3,
     ):
         self.orig_pos2scores = pos2scores
         self.orig_neg2scores = neg2scores
@@ -90,6 +101,8 @@ class DistributionPairInstance:
         if top_fraction is None:
             self.top_fraction = [0.05, 0.2, 1.0]
         self.num_hyps = num_hyps
+        self.max_round = max_round
+        self.logs = []
     
     # this function sets the representativeness based on residual
     # if the residual is None, then it sets the representativeness to be the original scores
@@ -97,10 +110,10 @@ class DistributionPairInstance:
         self.current_pos2representative = deepcopy(self.orig_pos2scores)
         self.current_neg2representative = deepcopy(self.orig_neg2scores)
         if self.current_sent2residual is not None: 
-            for d in [self.current_pos2representative, self.current_neg2representative]:
-                for sent in d:
-                    d[sent] = self.current_sent2residual[sent]
-
+            for sent in self.current_pos2representative:
+                self.current_pos2representative[sent] = self.current_sent2residual[sent]
+            for sent in self.current_neg2representative:
+                self.current_neg2representative[sent] = -self.current_sent2residual[sent]
         else:
             self.current_sent2residual = {}
             for sent in self.current_pos2representative:
@@ -117,13 +130,14 @@ class DistributionPairInstance:
                 sorted_neg = sorted(self.current_neg2representative, key=self.current_neg2representative.get, reverse=True)
                 pos, neg = lexical_diversity(sorted_pos, sorted_neg, top_p=p)
                 proposer_args.append({'pos_sents': pos, 'neg_sents': neg})
-        raw_nl_hyps = self.engine.propose_hypotheses(proposer_args)
+        raw_nl_hyps = self.engine.propose_hypotheses(proposer_args, verbose=True)
         raw_nl_hyps = [h for h in raw_nl_hyps if h is not None]
         if DEBUG:
             raw_nl_hyps = ['hyp %d' % random.randint(0, 10) for _ in range(len(raw_nl_hyps))]
 
         ### TODO this needs to be debugged; currently haven't tested it
-        for hypothesis, proposer_arg in zip(raw_nl_hyps, proposer_args):
+        print('Get in-context example demonstrations of the hypotheses')
+        for hypothesis, proposer_arg in tqdm.tqdm(zip(raw_nl_hyps, proposer_args)):
             pos_sents, neg_sents = proposer_arg['pos_sents'], proposer_arg['neg_sents']
             paired_verifier_args = []
             for (pos_sent, neg_sent) in product(pos_sents, neg_sents):
@@ -192,22 +206,25 @@ class DistributionPairInstance:
         competitive_hypotheses = list(target_hypotheses)
         cur_pointer = 0
 
-        while cur_pointer < len(random_sent_order):
-            sents = random_sent_order[cur_pointer:cur_pointer+VERIFY_HYP_BLOCK_SIZE]
-            cur_pointer += VERIFY_HYP_BLOCK_SIZE
-            verifier_w_example_args = []
+        print('Filtering out weak hypotheses')
+        with tqdm.tqdm(total=len(random_sent_order)) as pbar:
+            while cur_pointer < len(random_sent_order):
+                sents = random_sent_order[cur_pointer:cur_pointer+VERIFY_HYP_BLOCK_SIZE]
+                cur_pointer += VERIFY_HYP_BLOCK_SIZE
+                verifier_w_example_args = []
 
-            for sent in sents:
-                for hypothesis in competitive_hypotheses:
-                    # hint (d['positive_sample'], d['negative_sample'], d['hypothesis'], d['target_sample'])
-                    verifier_arg = {'positive_sample': hypothesis['pos_sent'], 'negative_sample': hypothesis['neg_sent'], 'hypothesis': hypothesis['hypothesis'], 'target_sample': sent, 'orig_h': hypothesis}
-                    verifier_w_example_args.append(verifier_arg)
-            all_scores = self.engine.verify_w_examples(verifier_w_example_args)
-            assert len(all_scores) == len(verifier_w_example_args)
-            for d, s in zip(verifier_w_example_args, all_scores):
-                d['orig_h']['sent2score'][d['target_sample']] = s
-            
-            competitive_hypotheses = self.filter_weak_hypotheses(competitive_hypotheses)
+                for sent in sents:
+                    for hypothesis in competitive_hypotheses:
+                        # hint (d['positive_sample'], d['negative_sample'], d['hypothesis'], d['target_sample'])
+                        verifier_arg = {'positive_sample': hypothesis['pos_sent'], 'negative_sample': hypothesis['neg_sent'], 'hypothesis': hypothesis['hypothesis'], 'target_sample': sent, 'orig_h': hypothesis}
+                        verifier_w_example_args.append(verifier_arg)
+                all_scores = self.engine.verify_w_examples(verifier_w_example_args)
+                assert len(all_scores) == len(verifier_w_example_args)
+                for d, s in zip(verifier_w_example_args, all_scores):
+                    d['orig_h']['sent2score'][d['target_sample']] = s
+                
+                competitive_hypotheses = self.filter_weak_hypotheses(competitive_hypotheses)
+                pbar.update(len(sents))
         for h in competitive_hypotheses:
             assert len(h['sent2score']) == len(self.current_sent2residual)
             h['fullly_computed'] = True
@@ -233,18 +250,46 @@ class DistributionPairInstance:
         clf.fit(selected_X, Y)
         Y_hat = clf.predict(selected_X)
         self.current_sent2residual = {sent: Y[i] - Y_hat[i] for i, sent in enumerate(sents)}
+        self.current_selected_hypotheses_weight = [(hypotheses[i], clf.coef_[0][i]) for i in selected_feature_dims]
 
     
     def one_step(self):
+        log_this_round = {}
         self.set_current_representative_for_proposal()
+
+        # log the current residual and representativeness score
+        log_this_round['start_residual'] = deepcopy(self.current_sent2residual)
+        log_this_round['start_representativeness'] = {'pos': deepcopy(self.current_pos2representative), 'neg': deepcopy(self.current_neg2representative)}
+        
         hypotheses = self.get_hypotheses()
         self.get_best_hypotheses_active(hypotheses)
+
         self.calculate_residual()
+
+        # log the current residual and representativeness score
+        log_this_round['end_residual'] = deepcopy(self.current_sent2residual)
+        log_this_round['end_representativeness'] = {'pos': deepcopy(self.current_pos2representative), 'neg': deepcopy(self.current_neg2representative)}
+        
+        log_this_round['current_h_weight'] = deepcopy(self.current_selected_hypotheses_weight)
+
         self.current_round += 1
+        self.logs.append(log_this_round)
+    
+    def run(self):
+        while self.current_round < self.max_round:
+            self.one_step()
+        return {
+            'logs': self.logs,
+            'hypotheses': self.all_hypotheses
+        }
+    
+
 
 if __name__ == '__main__':
     from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
     import torch
+
+    # a toy test case
     model_name = 't5-small'
     tokenizer = AutoTokenizer.from_pretrained(model_name)
     model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
@@ -254,33 +299,6 @@ if __name__ == '__main__':
     model_tokenizer = (model, tokenizer)
     engine = Engine(model_tokenizer)
 
-    # pos2scores = {
-    #     'I love this movie': 1,
-    #     'Highly recommended': 0.8,
-    #     'I like this movie': 0.7,
-    #     'I want to watch this movie again. so good': 0.92,
-    #     'This movie is great': 0.9,
-    #     'I would recommend this movie to other people': 0.8,
-    #     'sooooo good': 0.9,
-    #     'kinda good': 0.5,
-    #     'kinda nice': 0.5,
-    #     'a reasonable movie': 0.5,
-    #     'a reasonable plot': 0.5,
-    # }
-
-    # neg2scores = {
-    #     'I hate this movie': 1,
-    #     'I don\'t like this movie': 0.8,
-    #     'I don\'t want to watch this movie again': 0.7,
-    #     'I don\'t recommend this movie': 0.6,
-    #     'This movie is terrible': 0.9,
-    #     'I would not recommend this movie to other people': 0.8,
-    #     'sooooo bad': 0.9,
-    #     'kinda bad': 0.5,
-    #     'kinda boring': 0.5,
-    #     'a so-so movie': 0.5,
-    #     'a so-so plot': 0.5,
-    # }
     pos2scores = {
         'pos neg %.2f' % f: f for f in np.arange(0.5, 1.0, 0.002)
     }
@@ -289,9 +307,8 @@ if __name__ == '__main__':
     }
 
     dp_instance = DistributionPairInstance(pos2scores, neg2scores, engine)
-
-    dp_instance.one_step()
-    dp_instance.one_step()
+    result = dp_instance.run()
+    pkl.dump(result, open('result.pkl', 'wb'))
 
 
 

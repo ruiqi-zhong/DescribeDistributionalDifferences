@@ -12,7 +12,7 @@ import numpy as np
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 mount_dir = 'mount/'
-debug_prompt = True
+debug_prompt = False
 eps = 1e-8
 
 def clamp(l, min_v, max_v):
@@ -109,12 +109,14 @@ class Engine:
         self.model_tokenizer = model_tokenizer
         self.prompt2result = {}
     
-    def propose_hypotheses(self, ds):
+    def propose_hypotheses(self, ds, verbose=False):
         prompts = [construct_proposer_prompt(d['pos_sents'], d['neg_sents']) for d in ds]
         if debug_prompt:
             print('example proposer hypothesis prompt')
             print(prompts[0])
-        return [d['lm_postprocess'] for d in sample_batched(self.model_tokenizer, prompts)]
+        if verbose:
+            print('proposing hypotheses')
+        return [d['lm_postprocess'] for d in sample_batched(self.model_tokenizer, prompts, verbose=verbose)]
     
     def verify_w_examples(self, ds):
         prompts = [construct_verifier_w_examples_prompt(d['positive_sample'], d['negative_sample'], d['hypothesis'], d['target_sample']) for d in ds]
