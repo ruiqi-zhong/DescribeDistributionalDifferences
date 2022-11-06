@@ -80,8 +80,8 @@ class DistributionPairInstance:
         neg2scores, 
         engine, 
         top_fraction=None,
-        num_hyps=20,
-        max_round=3,
+        num_hyps=10,
+        max_round=2,
     ):
         self.orig_pos2scores = pos2scores
         self.orig_neg2scores = neg2scores
