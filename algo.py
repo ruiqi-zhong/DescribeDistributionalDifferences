@@ -254,7 +254,7 @@ class DistributionPairInstance:
         clf.fit(selected_X, Y)
         Y_hat = clf.predict(selected_X)
         self.current_sent2residual = {sent: Y[i] - Y_hat[i] for i, sent in enumerate(sents)}
-        self.current_selected_hypotheses_weight = [(hypotheses[i], clf.coef_[0][i]) for i in selected_feature_dims]
+        self.current_selected_hypotheses_weight = [(hypotheses[selected_feature_dims[i]], clf.coef_[0][i]) for i in range(len(selected_feature_dims))]
 
     
     def one_step(self):
@@ -289,7 +289,7 @@ class DistributionPairInstance:
 
 
 
-def subsample(sent2score: Dict[str, float], subsample_size=1000) -> Dict[str, float]:
+def subsample(sent2score: Dict[str, float], subsample_size=200) -> Dict[str, float]:
     if len(sent2score) <= subsample_size:
         return sent2score
     all_sents = list(sent2score.keys())
