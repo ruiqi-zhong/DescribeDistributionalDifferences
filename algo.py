@@ -11,10 +11,13 @@ from models.engine import Engine
 import random
 import tqdm
 import pickle as pkl
+import json
+from typing import Dict, List, Tuple
 
-DEBUG = True
+DEBUG = False
 
 VERIFY_HYP_BLOCK_SIZE = 32
+
 
 def r_to_z(r):
     return math.log((1 + r) / (1 - r)) / 2.0
@@ -225,6 +228,7 @@ class DistributionPairInstance:
                 
                 competitive_hypotheses = self.filter_weak_hypotheses(competitive_hypotheses)
                 pbar.update(len(sents))
+                pbar.set_description('Num hypotheses: %d' % len(competitive_hypotheses))
         for h in competitive_hypotheses:
             assert len(h['sent2score']) == len(self.current_sent2residual)
             h['fullly_computed'] = True
@@ -282,33 +286,73 @@ class DistributionPairInstance:
             'logs': self.logs,
             'hypotheses': self.all_hypotheses
         }
-    
+
+
+
+def subsample(sent2score: Dict[str, float], subsample_size=1000) -> Dict[str, float]:
+    if len(sent2score) <= subsample_size:
+        return sent2score
+    all_sents = list(sent2score.keys())
+    random.shuffle(all_sents)
+    return {sent: sent2score[sent] for sent in all_sents[:subsample_size]}
 
 
 if __name__ == '__main__':
     from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
     import torch
 
-    # a toy test case
-    model_name = 't5-small'
-    tokenizer = AutoTokenizer.from_pretrained(model_name)
-    model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    model.to(device)
-    model.eval()
-    model_tokenizer = (model, tokenizer)
-    engine = Engine(model_tokenizer)
+    test_case = 'realistic'
+    if test_case == 'realistic':
+        from gadgets.util import parallelize_across_device
 
-    pos2scores = {
-        'pos neg %.2f' % f: f for f in np.arange(0.5, 1.0, 0.002)
-    }
-    neg2scores = {
-        'neg pos %.2f' % f: f for f in np.arange(0.5, 1.0, 0.002)
-    }
+        benchmark = json.load(open('benchmark_sec_4/benchmark.json'))
+        model = AutoModelForSeq2SeqLM.from_pretrained('models/ckpts/checkpoint-500')
+        # model = AutoModelForSeq2SeqLM.from_pretrained('t5-small')
+        model.eval()
+        parallelize_across_device(model)
+        tokenizer = AutoTokenizer.from_pretrained('t5-small')
+        print('Finished loading model')
+        tokenizer.model_max_length = 1024
+        model_tokenizer = (model, tokenizer)
+        id2result = {}
+        for distribution_idx in range(10):
+            distr = benchmark[distribution_idx]
+            positive_samples, negative_samples = distr['positive_samples'], distr['negative_samples']
+            pos2score = {s: 1 for s in positive_samples}
+            neg2score = {s: 1 for s in negative_samples}
 
-    dp_instance = DistributionPairInstance(pos2scores, neg2scores, engine)
-    result = dp_instance.run()
-    pkl.dump(result, open('result.pkl', 'wb'))
+            pos2score = subsample(pos2score)
+            neg2score = subsample(neg2score)
+
+            engine = Engine(model_tokenizer)
+
+            dp_instance = DistributionPairInstance(pos2score, neg2score, engine, max_round=3)
+            result = dp_instance.run()
+            id2result[distribution_idx] = result
+            pkl.dump(id2result, open('debug/1105run.pkl', 'wb'))
+
+    if test_case == 'toy':
+        # a toy test case
+        model_name = 't5-small'
+        tokenizer = AutoTokenizer.from_pretrained(model_name)
+        model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
+        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        model.to(device)
+        model.eval()
+        model_tokenizer = (model, tokenizer)
+        engine = Engine(model_tokenizer)
+
+        pos2scores = {
+            'pos neg %.2f' % f: f for f in np.arange(0.5, 1.0, 0.002)
+        }
+        neg2scores = {
+            'neg pos %.2f' % f: f for f in np.arange(0.5, 1.0, 0.002)
+        }
+
+        dp_instance = DistributionPairInstance(pos2scores, neg2scores, engine)
+        result = dp_instance.run()
+        pkl.dump(result, open('result.pkl', 'wb'))
+    
 
 
 
