@@ -359,7 +359,6 @@ if __name__ == '__main__':
         else:
             model = AutoModelForSeq2SeqLM.from_pretrained('t5-small')
 
-        model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         model.to(device)
         model.eval()
