@@ -1,11 +1,7 @@
-from gadgets.lexical_diversity import lexical_diversity
 from copy import deepcopy
 from collections import defaultdict
 from itertools import product
-from scipy.stats import pearsonr
 import math
-import scipy.stats as stats
-from sklearn.linear_model import LogisticRegression
 import numpy as np
 from models.engine import Engine
 import random
@@ -13,6 +9,9 @@ import tqdm
 import pickle as pkl
 import json
 from typing import Dict, List, Tuple
+from gadgets.lexical_diversity import lexical_diversity
+import scipy.stats as stats
+from sklearn.linear_model import LogisticRegression
 
 DEBUG = False
 
@@ -41,7 +40,7 @@ def r_confidence_interval(r, alpha, n):
 def calculate_corr(x, y, alpha=1e-5):
     x, y = np.array(x), np.array(y)
     n = len(x)
-    corr, p = pearsonr(x, y)
+    corr, p = stats.pearsonr(x, y)
     lo, hi = r_confidence_interval(corr, alpha, n)
     result = {'corr': corr, 'p': p, 'lo': lo, 'hi': hi, 'n': n}
     return result
@@ -260,7 +259,7 @@ class DistributionPairInstance:
             hypothesis = deepcopy(hypotheses[selected_feature_dims[i]])
             hypothesis['weight'] = clf.coef_[0][i]
             self.current_selected_hypotheses_weight.append(hypothesis)
-
+        
     
     def one_step(self):
         log_this_round = {}
@@ -306,7 +305,7 @@ if __name__ == '__main__':
     from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
     import torch
 
-    test_case = 'realistic'
+    test_case = 'toy'
     if test_case == 'realistic':
         from gadgets.util import parallelize_across_device
 
@@ -318,7 +317,12 @@ if __name__ == '__main__':
 
         model.eval()
         parallelize_across_device(model)
-        tokenizer = AutoTokenizer.from_pretrained('t5-small')
+
+        tok_path = '/mount/models/t5-small-cp_tokenizer/'
+        if os.path.exists(tok_path):
+            tokenizer = AutoTokenizer.from_pretrained(tok_path)
+        else:
+            tokenizer = AutoTokenizer.from_pretrained('t5-small')
         print('Finished loading model')
         tokenizer.model_max_length = 1024
         model_tokenizer = (model, tokenizer)
