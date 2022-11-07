@@ -2,7 +2,11 @@ import json
 from transformers import AutoTokenizer
 import numpy as np
 
-t5tok = AutoTokenizer.from_pretrained('t5-small')
+tok_path = '/mount/models/t5-small-cp_tokenizer/'
+if os.path.exists(tok_path):
+    t5tok = AutoTokenizer.from_pretrained(tok_path)
+else:
+    t5tok = AutoTokenizer.from_pretrained('t5-small')
 
 def tok_subspan(s, subspan_token_max_len=80):
     toks = t5tok.tokenize(s)
