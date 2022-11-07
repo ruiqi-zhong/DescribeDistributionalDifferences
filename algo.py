@@ -347,12 +347,17 @@ if __name__ == '__main__':
 
     if test_case == 'toy':
         # a toy test case
-        model_name = 't5-small'
         tok_path = '/mount/models/t5-small-cp_tokenizer/'
         if os.path.exists(tok_path):
             tokenizer = AutoTokenizer.from_pretrained(tok_path)
         else:
             tokenizer = AutoTokenizer.from_pretrained('t5-small')
+
+        model_path = '/mount/models/t5-small-cp_model/'
+        if os.path.exists(model_path):
+            model = AutoModelForSeq2SeqLM.from_pretrained(model_path)
+        else:
+            model = AutoModelForSeq2SeqLM.from_pretrained('t5-small')
 
         model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
