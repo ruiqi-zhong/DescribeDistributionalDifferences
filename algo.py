@@ -323,6 +323,7 @@ if __name__ == '__main__':
             tokenizer = AutoTokenizer.from_pretrained(tok_path)
         else:
             tokenizer = AutoTokenizer.from_pretrained('t5-small')
+    
         print('Finished loading model')
         tokenizer.model_max_length = 1024
         model_tokenizer = (model, tokenizer)
@@ -346,7 +347,12 @@ if __name__ == '__main__':
     if test_case == 'toy':
         # a toy test case
         model_name = 't5-small'
-        tokenizer = AutoTokenizer.from_pretrained(model_name)
+        tok_path = '/mount/models/t5-small-cp_tokenizer/'
+        if os.path.exists(tok_path):
+            tokenizer = AutoTokenizer.from_pretrained(tok_path)
+        else:
+            tokenizer = AutoTokenizer.from_pretrained('t5-small')
+
         model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         model.to(device)
