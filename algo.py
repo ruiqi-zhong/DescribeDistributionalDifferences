@@ -252,9 +252,14 @@ class DistributionPairInstance:
         selected_X = X[:, selected_feature_dims]
         clf = LogisticRegression(penalty='l2', C=1.0, solver='lbfgs', max_iter=1000)
         clf.fit(selected_X, Y)
-        Y_hat = clf.predict(selected_X)
+        Y_hat = clf.predict_proba(selected_X)[:,1]
         self.current_sent2residual = {sent: Y[i] - Y_hat[i] for i, sent in enumerate(sents)}
-        self.current_selected_hypotheses_weight = [(hypotheses[selected_feature_dims[i]], clf.coef_[0][i]) for i in range(len(selected_feature_dims))]
+
+        self.current_selected_hypotheses_weight = []
+        for i in range(len(selected_feature_dims)):
+            hypothesis = deepcopy(hypotheses[selected_feature_dims[i]])
+            hypothesis['weight'] = clf.coef_[0][i]
+            self.current_selected_hypotheses_weight.append(hypothesis)
 
     
     def one_step(self):
@@ -301,7 +306,7 @@ if __name__ == '__main__':
     from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
     import torch
 
-    test_case = 'realistic'
+    test_case = 'toy'
     if test_case == 'realistic':
         from gadgets.util import parallelize_across_device
 
@@ -326,7 +331,7 @@ if __name__ == '__main__':
 
             engine = Engine(model_tokenizer)
 
-            dp_instance = DistributionPairInstance(pos2score, neg2score, engine, max_round=3)
+            dp_instance = DistributionPairInstance(pos2score, neg2score, engine, max_round=2)
             result = dp_instance.run()
             id2result[distribution_idx] = result
             pkl.dump(id2result, open('debug/1105run.pkl', 'wb'))
