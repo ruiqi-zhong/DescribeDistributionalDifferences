@@ -1,6 +1,7 @@
 import json
 from transformers import AutoTokenizer
 import numpy as np
+import os
 
 tok_path = '/mount/models/t5-small-cp_tokenizer/'
 if os.path.exists(tok_path):
