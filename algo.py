@@ -306,13 +306,16 @@ if __name__ == '__main__':
     from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
     import torch
 
-    test_case = 'toy'
+    test_case = 'realistic'
     if test_case == 'realistic':
         from gadgets.util import parallelize_across_device
 
         benchmark = json.load(open('benchmark_sec_4/benchmark.json'))
-        model = AutoModelForSeq2SeqLM.from_pretrained('models/ckpts/checkpoint-500')
-        # model = AutoModelForSeq2SeqLM.from_pretrained('t5-small')
+        ckpt_path = 'models/ckpts/checkpoint-500'
+        if not os.path.exists(ckpt_path):
+            ckpt_path = 'models/checkpoint-200/'
+        model = AutoModelForSeq2SeqLM.from_pretrained()
+
         model.eval()
         parallelize_across_device(model)
         tokenizer = AutoTokenizer.from_pretrained('t5-small')
