@@ -196,7 +196,7 @@ class DistributionPairInstance:
         return residual_corr
     
     # rule out weak hypotheses based on the current residual
-    # this is the place where Peter can improve the algorithm
+    # this is the place where @Peter can improve the algorithm
     def filter_weak_hypotheses(self, hypotheses, K=5):
         corr_info = [self.get_correlation_info(h) for h in hypotheses]
 
