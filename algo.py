@@ -38,6 +38,7 @@ def r_confidence_interval(r, alpha, n):
     return (z_to_r(lo), z_to_r(hi))
 
 
+#  calculate a high confidence interval of the pearsonr correlation between x and y
 def calculate_corr(x, y, alpha=1e-5):
     x, y = np.array(x), np.array(y)
     n = len(x)
@@ -138,7 +139,6 @@ class DistributionPairInstance:
         if DEBUG:
             raw_nl_hyps = ['hyp %d' % random.randint(0, 10) for _ in range(len(raw_nl_hyps))]
 
-        ### TODO this needs to be debugged; currently haven't tested it
         print('Get in-context example demonstrations of the hypotheses')
         for hypothesis, proposer_arg in tqdm.tqdm(zip(raw_nl_hyps, proposer_args)):
             pos_sents, neg_sents = proposer_arg['pos_sents'], proposer_arg['neg_sents']
@@ -174,12 +174,20 @@ class DistributionPairInstance:
 
 
     # calculate the correlation between the residual and the hypothesis on existing data
+    # NOTE: we will first calculate its correlation with the original 0/1 binary label
+    # and flip it such that it is positively correlated
     def get_correlation_info(self, hypothesis):
         ordered_text = sorted(hypothesis['sent2score'], key=hypothesis['sent2score'].get)
         gold = [self.current_sent2residual[sent] for sent in ordered_text]
         pred = [hypothesis['sent2score'][sent] for sent in ordered_text]
         orig = [self.orig_sent2membership[sent] for sent in ordered_text]
         orig_corr = calculate_corr(orig, pred)
+
+        # if the hypothesis is negatively correlated with the orig label
+        # flip its value to calculate its correlation with the residual
+        # notice that the values hypothesis['sent2score'] will never be flipped
+        # the score will only be flipped when we calculate its correlation
+        # and when we use it to run a logistic regression
         if orig_corr['corr'] < 0:
             hypothesis['+'] = False
             pred = [-x for x in pred]
@@ -206,26 +214,35 @@ class DistributionPairInstance:
         random_sent_order = list(self.current_sent2residual.keys())
         random.shuffle(random_sent_order)
 
+        # competitive_hypotheses is a list of hypotheses that can still be in the top-5
         competitive_hypotheses = list(target_hypotheses)
         cur_pointer = 0
 
         print('Filtering out weak hypotheses')
+
+        # enumerate the sentences in random order
         with tqdm.tqdm(total=len(random_sent_order)) as pbar:
             while cur_pointer < len(random_sent_order):
+
+                # take a batch of sentences, and compute a score for every competitive hypotheses
                 sents = random_sent_order[cur_pointer:cur_pointer+VERIFY_HYP_BLOCK_SIZE]
                 cur_pointer += VERIFY_HYP_BLOCK_SIZE
-                verifier_w_example_args = []
 
+                # construct the verifier_w_example arguments
+                verifier_w_example_args = []
                 for sent in sents:
                     for hypothesis in competitive_hypotheses:
-                        # hint (d['positive_sample'], d['negative_sample'], d['hypothesis'], d['target_sample'])
                         verifier_arg = {'positive_sample': hypothesis['pos_sent'], 'negative_sample': hypothesis['neg_sent'], 'hypothesis': hypothesis['hypothesis'], 'target_sample': sent, 'orig_h': hypothesis}
                         verifier_w_example_args.append(verifier_arg)
+                
+                # run the verifier 
                 all_scores = self.engine.verify_w_examples(verifier_w_example_args)
                 assert len(all_scores) == len(verifier_w_example_args)
                 for d, s in zip(verifier_w_example_args, all_scores):
                     d['orig_h']['sent2score'][d['target_sample']] = s
                 
+                # filter out weaker hypotheses based on UCB
+                # TODO: Peter can probably improve here. 
                 competitive_hypotheses = self.filter_weak_hypotheses(competitive_hypotheses)
                 pbar.update(len(sents))
                 pbar.set_description('Num hypotheses: %d' % len(competitive_hypotheses))
@@ -264,13 +281,18 @@ class DistributionPairInstance:
     
     def one_step(self):
         log_this_round = {}
+        # we will sort the sentences from both groups based on their representativeness scores
+        # and will show the proposer models the representative examples
         self.set_current_representative_for_proposal()
 
         # log the current residual and representativeness score
         log_this_round['start_residual'] = deepcopy(self.current_sent2residual)
         log_this_round['start_representativeness'] = {'pos': deepcopy(self.current_pos2representative), 'neg': deepcopy(self.current_neg2representative)}
         
+        # propose the hypotheses
         hypotheses = self.get_hypotheses()
+
+        # run the verifier, and adaptively deciding which hypothesis we want to keep
         self.get_best_hypotheses_active(hypotheses)
 
         self.calculate_residual()
@@ -285,6 +307,7 @@ class DistributionPairInstance:
         self.logs.append(log_this_round)
     
     def run(self):
+        # proceed multiple rounds
         while self.current_round < self.max_round:
             self.one_step()
         return {
@@ -306,19 +329,27 @@ if __name__ == '__main__':
     from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
     import torch
 
+    # toy test case will run on toy examples with t5-small to check whether code is executable
+    # realistic test case will run on the 54 benchmark datasets
     test_case = 'toy'
     if test_case == 'realistic':
         from gadgets.util import parallelize_across_device
 
         benchmark = json.load(open('benchmark_sec_4/benchmark.json'))
-        ckpt_path = 'models/ckpts/checkpoint-500'
+
+        # the model path; just let me know if you cannot access it
+        ckpt_path = '/scratch/users/ruiqi-zhong/describe_difference/DescribeDistributionalDifferences/models/ckpts/checkpoint-500/'
         if not os.path.exists(ckpt_path):
             ckpt_path = 'models/checkpoint-200/'
         model = AutoModelForSeq2SeqLM.from_pretrained()
 
         model.eval()
+
+        # parallelize the model across device if you are running on small GPUs
+        # no need if using saruman
         parallelize_across_device(model)
 
+        # loading the tokenizer
         tok_path = '/mount/models/t5-small-cp_tokenizer/'
         if os.path.exists(tok_path):
             tokenizer = AutoTokenizer.from_pretrained(tok_path)
@@ -330,6 +361,7 @@ if __name__ == '__main__':
         model_tokenizer = (model, tokenizer)
         id2result = {}
         for distribution_idx in range(10):
+            # pretty generic data loading, nothing interesting happening here
             distr = benchmark[distribution_idx]
             positive_samples, negative_samples = distr['positive_samples'], distr['negative_samples']
             pos2score = {s: 1 for s in positive_samples}
@@ -338,8 +370,13 @@ if __name__ == '__main__':
             pos2score = subsample(pos2score)
             neg2score = subsample(neg2score)
 
+            # engine takes in a model and a tokenizer as the argument
+            # it can propose hypothesis, compare two examples given a hypothesis, and classify whether a target example satisfies a hypothesis given an in-context example
+            # you can see them in models/templates
             engine = Engine(model_tokenizer)
 
+            # a class that learns a linear combination of natural language hypotheses
+            # interesting things happen mostly in the .run function
             dp_instance = DistributionPairInstance(pos2score, neg2score, engine, max_round=2)
             result = dp_instance.run()
             id2result[distribution_idx] = result
@@ -375,8 +412,3 @@ if __name__ == '__main__':
         dp_instance = DistributionPairInstance(pos2scores, neg2scores, engine)
         result = dp_instance.run()
         pkl.dump(result, open('result.pkl', 'wb'))
-    
-
-
-
-
