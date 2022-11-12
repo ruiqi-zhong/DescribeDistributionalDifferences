@@ -339,7 +339,7 @@ if __name__ == '__main__':
         benchmark = json.load(open('benchmark_sec_4/benchmark.json'))
 
         # the model path; just let me know if you cannot access it
-        ckpt_path = '/scratch/users/ruiqi-zhong/describe_difference/DescribeDistributionalDifferences/models/ckpts/checkpoint-500/'
+        ckpt_path = '/scratch/users/ruiqi-zhong/describe_difference/DescribeDistributionalDifferences/models/ckpts/checkpoint-200/'
         if not os.path.exists(ckpt_path):
             ckpt_path = 'models/checkpoint-200/'
         model = AutoModelForSeq2SeqLM.from_pretrained()
