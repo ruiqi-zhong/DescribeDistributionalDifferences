@@ -70,7 +70,7 @@ if __name__ == '__main__':
         model = RobertaModel.from_pretrained(model_name).to(device)
         tokenizer = RobertaTokenizer.from_pretrained(model_name)
         model_tokenizer = (model, tokenizer)
-        embed_fuc = partial(roberta_embed, model_tokenizer)
+        embed_func = partial(roberta_embed, model_tokenizer)
     elif 't5' in model_name:
         model = T5Model.from_pretrained(model_name).to(device)
         tokenizer = T5Tokenizer.from_pretrained(model_name)
