@@ -1,6 +1,6 @@
 import random
 from transformers import RobertaTokenizer, RobertaModel
-from transformers import T5Tokenizer, T5Model
+from transformers import T5Tokenizer, T5EncoderModel
 from transformers import BertTokenizer, BertModel
 from datasets import load_dataset
 import torch
@@ -9,12 +9,13 @@ from functools import partial
 import tqdm
 from argparse import ArgumentParser
 import os
+import json
 
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 BSIZE = 32
-SAVE_EVERY = 5000
-TOTAL_NUM = 100000
+SAVE_EVERY = 10000
+TOTAL_NUM = 1000000
 
 
 def roberta_embed(model_tokenizer, sentences):
@@ -34,9 +35,9 @@ def t5embed(model_tokenizer, sentences):
     with torch.no_grad():
         inputs = tokenizer(sentences, return_tensors='pt', padding=True, truncation=True).to(device)
         outputs = torch.mean(model(**inputs).last_hidden_state, dim=1)
-        print(outputs.shape)
         return outputs.cpu().numpy()
 
+    
 def bert_embed(model_tokenizer, sentences):
     model, tokenizer = model_tokenizer
     model.eval()
@@ -47,13 +48,23 @@ def bert_embed(model_tokenizer, sentences):
         return outputs.cpu().numpy()
 
 def embed_sentences(embed_func, sentences, bsize=BSIZE, save_dir=None):
-    embeddings = []
+    embeddings, texts = [], []
+    save_threshold = [i * SAVE_EVERY for i in range(1, TOTAL_NUM // SAVE_EVERY + 2)]
     for i in tqdm.trange(0, len(sentences), bsize):
-        embeddings.append(embed_func(sentences[i:i + bsize]))
-        finished_count = (i + 1) * bsize
-        if save_dir is not None and finished_count % SAVE_EVERY == 0:
-            np.save(os.path.join(save_dir, f'{finished_count}.npy'), np.concatenate(embeddings, axis=0))
+        sentence_batch = sentences[i:i+bsize]
+        embeddings.extend(embed_func(sentence_batch))
+        texts.extend(sentence_batch)
+        finished_count = i + bsize
+        if save_dir is not None and finished_count > save_threshold[0]:
+            embeddings = np.array(embeddings)
+            np.save(os.path.join(save_dir, f'{finished_count}.npy'), embeddings)
+            json.dump(texts, open(os.path.join(save_dir, f'{finished_count}.json'), 'w'))
+            save_threshold.pop(0)
             embeddings = []
+            texts = []
+    if len(embeddings) > 0:
+        np.save(os.path.join(save_dir, f'{finished_count}.npy'), np.concatenate(embeddings, axis=0))
+        json.dump(texts, open(os.path.join(save_dir, f'{finished_count}.json'), 'w'))
 
 
 if __name__ == '__main__':
@@ -72,7 +83,7 @@ if __name__ == '__main__':
         model_tokenizer = (model, tokenizer)
         embed_func = partial(roberta_embed, model_tokenizer)
     elif 't5' in model_name:
-        model = T5Model.from_pretrained(model_name).to(device)
+        model = T5EncoderModel.from_pretrained(model_name).to(device)
         tokenizer = T5Tokenizer.from_pretrained(model_name)
         model_tokenizer = (model, tokenizer)
         embed_func = partial(t5embed, model_tokenizer)
@@ -80,9 +91,9 @@ if __name__ == '__main__':
         model = BertModel.from_pretrained(model_name).to(device)
         tokenizer = BertTokenizer.from_pretrained(model_name)
         model_tokenizer = (model, tokenizer)
-        embed_fuc = partial(bert_embed, model_tokenizer)
+        embed_func = partial(bert_embed, model_tokenizer)
     
-
+    # data is a list of strings
     if subpart_name == 'wikitext-103-raw-v1':
         data = load_dataset('wikitext', subpart_name)['train']['text']
     elif subpart_name == 'wikitext-2-raw-v1':
@@ -94,7 +105,4 @@ if __name__ == '__main__':
     random.shuffle(filtered_data)
     filtered_data = filtered_data[:TOTAL_NUM]
 
-    embeddings = embed_sentences(embed_fuc, filtered_data, save_dir=save_dir)
-
-
-
+    embeddings = embed_sentences(embed_func, filtered_data, save_dir=save_dir)
