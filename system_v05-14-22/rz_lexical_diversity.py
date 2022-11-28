@@ -9,8 +9,12 @@ from nltk.tokenize import word_tokenize, RegexpTokenizer
 from nltk.corpus import stopwords
 from collections import OrderedDict
 from collections import defaultdict
+from collections import Counter
+
 from random import choice
 from typing import List, Set
+
+import os
 
 nltk.download("stopwords")
 
@@ -19,9 +23,11 @@ ps = PorterStemmer()
 
 # reorder the list
 # now the list is going to be a random shuffle of sorted_l[:top_p fraction] + a random shuffle of sorted_l[top_p fraction:]
+
+
 def re_order(sorted_l: List[str], top_p: float) -> List[str]:
     part1 = sorted_l[: int(len(sorted_l) * top_p)]
-    part2 = sorted_l[int(len(sorted_l) * top_p) :]
+    part2 = sorted_l[int(len(sorted_l) * top_p):]
     np.random.shuffle(part1)
     np.random.shuffle(part2)
     return part1 + part2
@@ -102,37 +108,82 @@ def lexical_diversity(
 
 
 if __name__ == "__main__":
+    distribution_pairs = json.load(
+        open("../benchmark_sec_4/benchmark_1018.json"))
+    indexes = defaultdict(list)
+    print("counting...")
+    for i, p in enumerate(distribution_pairs):
+        indexes[p["type"]].append(i)
 
-    def one_sample_generator(word_freq):
-        s = ""
-        for w, f in word_freq.items():
-            if np.random.rand() < f:
-                s += w + " "
-        return s
+    # print(indexes)
+    # print("counting...")
+    # c = Counter([p["type"] for p in distribution_pairs])
+    tasks = ["category_error", "task_error"]
+    out = {}
+    for task in tasks:
+        task_dict = {}
+        for i in range(10):
+            save_folder = f"end2end_jobs_benchmark_1018/benchmark_1018-all-{task}-{i}"
+            if not os.path.exists(save_folder):
+                continue
 
-    A_word_freq = {
-        "one": 1,
-        "two": 0.8,
-        "three": 0.2,
-        "four": 0.2,
-        "five": 0.2,
-        "six": 0.2,
-    }
-    As = [one_sample_generator(A_word_freq) for _ in range(10)]
-    print(As)
-    As = sorted(As, key=lambda x: (1 if "two" in x else 0) + 0.1 * len(x), reverse=True)
-    print(As)
-    B_word_freq = {
-        "one": 1,
-        "seven": 0.8,
-        "eight": 0.2,
-        "nine": 0.2,
-        "ten": 0.2,
-        "eleven": 0.2,
-    }
-    Bs = [one_sample_generator(B_word_freq) for _ in range(10)]
-    Bs = sorted(
-        Bs, key=lambda x: (1 if "seven" in x else 0) + 0.1 * len(x), reverse=True
-    )
-    print(Bs)
-    print(lexical_diversity(As, Bs, top_p=0.2, num_sentences=5))
+            data = json.load(
+                open(os.path.join(save_folder, "shap_result.json")))
+            pos_data = list(data["pos2score"])
+            data_type = task
+            data_index = -1
+            for j in indexes[task]:
+                if pos_data[0] in distribution_pairs[j]["positive_samples"]:
+                    data_index = j
+            i_dict = {}
+
+            i_dict["average_roc"] = sum(data["auc_roc"]) / len(data["auc_roc"])
+            i_dict["auc_roc"] = data["auc_roc"]
+            # average = sum(data["auc_roc"]) / len(data["auc_roc"])
+            i_dict["num_pos"] = len(data["pos2score"])
+            i_dict["num_neg"] = len(data["neg2score"])
+
+            task_dict[str(data_index)] = i_dict
+            # for p in [0.05, 0.2, 1.0]:
+
+            # pos_sorted = OrderedDict()
+            # neg_sorted = OrderedDict()
+            # for k, v in sorted(
+            #     data["pos2score"].items(), key=lambda item: item[1], reverse=True
+            # ):
+            #     pos_sorted[k] = v
+
+            # for k, v in sorted(
+            #     data["neg2score"].items(), key=lambda item: item[1], reverse=True
+            # ):
+            #     neg_sorted[k] = v
+
+            # As = [k for k in pos_sorted]
+            # Bs = [k for k in neg_sorted]
+            # # print(As[:3])
+
+            # # print(Bs[:3])
+            # pos, neg = lexical_diversity(As, Bs, top_p=p, num_sentences=5)
+
+            # output_json = {
+            #     "A": [sentence for sentence in pos],
+            #     "A_Highlight": [
+            #         data["pos2highlight"][sentence] for sentence in pos
+            #     ],
+            #     "B": [sentence for sentence in neg],
+            #     "B_Highlight": [
+            #         data["neg2highlight"][sentence] for sentence in neg
+            #     ],
+            #     "auc_roc": data["auc_roc"]
+            # }
+            # p_dict[str(p)] = output_json
+            # task_dict[str(data_index)] = p_dict
+
+        out[task] = task_dict
+
+    with open("stats.json", "w") as f:
+        out = json.dumps(out, indent=4)
+        f.write(out)
+    # with open("shap_results_all_1.0.json", "w") as f:
+    #     out = json.dumps(out, indent=4)
+    #     f.write(out)

@@ -36,13 +36,15 @@ max_length = 128
 class RoBERTaSeq(nn.Module):
     def __init__(self):
         super().__init__()
-        self.model = AutoModelForSequenceClassification.from_pretrained(pretrain_model)
+        self.model = AutoModelForSequenceClassification.from_pretrained(
+            pretrain_model)
 
     def forward(self, **inputs):
         model_outputs = self.model(**inputs)
         model_output_dict = vars(model_outputs)
 
-        seq_lengths = torch.sum(inputs["attention_mask"], dim=-1).detach().cpu().numpy()
+        seq_lengths = torch.sum(
+            inputs["attention_mask"], dim=-1).detach().cpu().numpy()
         model_output_dict["highlight"] = [
             [1.0 / seq_length for _ in range(seq_length)] for seq_length in seq_lengths
         ]
@@ -68,8 +70,10 @@ class RoBERTaSeqAttn(nn.Module):
         attn_logits[inputs["attention_mask"] == 0] = float("-inf")
         attention = self.sm(attn_logits)
 
-        seq_lengths = torch.sum(inputs["attention_mask"], dim=-1).detach().cpu().numpy()
-        aggregated_repr = torch.einsum("bs,bsh->bh", attention, last_hidden_state)
+        seq_lengths = torch.sum(
+            inputs["attention_mask"], dim=-1).detach().cpu().numpy()
+        aggregated_repr = torch.einsum(
+            "bs,bsh->bh", attention, last_hidden_state)
 
         logits = self.lsm(self.clf_layer(aggregated_repr))
 
@@ -160,7 +164,8 @@ def train(cv_dict):
             max_length=max_length,
             padding=True,
         ).to(device)
-        labels = torch.tensor([d["label"] for d in train_data_dicts[:bsize]]).to(device)
+        labels = torch.tensor([d["label"]
+                              for d in train_data_dicts[:bsize]]).to(device)
         outputs = model(**inputs, labels=labels)
         loss = outputs["loss"]
         logits = outputs["logits"]
@@ -174,13 +179,13 @@ def train(cv_dict):
     return model, tokenizer
 
 
-def evaluate(texts, use_shap: bool, model, tokenizer, top_p):
+def evaluate(texts, model, tokenizer):
     model.eval()
     all_logits, all_highlights = [], []
     cur_start = 0
     while cur_start < len(texts):
         print(cur_start, len(texts))
-        texts_ = texts[cur_start : cur_start + bsize]
+        texts_ = texts[cur_start: cur_start + bsize]
         inputs = tokenizer(
             texts_,
             return_tensors="pt",
@@ -189,7 +194,8 @@ def evaluate(texts, use_shap: bool, model, tokenizer, top_p):
             padding=True,
         ).to(device)
         model_output_dict = model(**inputs)
-        logits = lsm(model_output_dict["logits"].detach().cpu()).numpy().tolist()
+        logits = lsm(
+            model_output_dict["logits"].detach().cpu()).numpy().tolist()
         all_highlights.extend(model_output_dict["highlight"])
         all_logits.extend(logits)
         cur_start += bsize
@@ -233,7 +239,7 @@ def calculate_shapley_values(models, tokenizer, texts, text_to_model):
     cur_start = 0
     while cur_start < len(texts):
 
-        texts_ = texts[cur_start : cur_start + bsize]
+        texts_ = texts[cur_start: cur_start + bsize]
         model = models[text_to_model[texts_[0]]]
         # print("sentence: ", texts_[0], "model index: ", text_to_model[texts_[0]])
         shap_values = explainer(texts_)
@@ -266,7 +272,7 @@ def get_lexical_diversity(pos_dict, neg_dict):
     return out
 
 
-def train_and_eval(cv_dict, use_shap, top_p):
+def train_and_eval(cv_dict):
     model, tokenizer = train(cv_dict)
 
     test_data_dict = list(
@@ -276,12 +282,12 @@ def train_and_eval(cv_dict, use_shap, top_p):
         )
     )
 
-    pos_eval_dict = evaluate(cv_dict["test_pos"], use_shap, model, tokenizer, top_p)
+    pos_eval_dict = evaluate(cv_dict["test_pos"], model, tokenizer)
     pos_logits, pos_highlights = (
         pos_eval_dict["logits"][:, 1],
         pos_eval_dict["highlights"],
     )
-    neg_eval_dict = evaluate(cv_dict["test_neg"], use_shap, model, tokenizer, top_p)
+    neg_eval_dict = evaluate(cv_dict["test_neg"], model, tokenizer)
     neg_logits, neg_highlights = (
         neg_eval_dict["logits"][:, 0],
         neg_eval_dict["highlights"],
@@ -292,7 +298,8 @@ def train_and_eval(cv_dict, use_shap, top_p):
     all_logits.extend(neg_eval_dict["logits"])
 
     labels = [d["label"] for d in test_data_dict]
-    fpr, tpr, thresholds = roc_curve(np.array(labels), np.array(all_logits)[:, 1])
+    fpr, tpr, thresholds = roc_curve(
+        np.array(labels), np.array(all_logits)[:, 1])
     auc_roc = auc(fpr, tpr)
 
     return (
@@ -314,7 +321,8 @@ def eval_only(pos, neg, use_shap):
     out = {}
     for fold_idx, cv_dict in enumerate(cv(pos, neg, NUM_FOLD)):
         if use_shap:
-            pos_eval_out = evaluate(cv_dict["test_pos"], use_shap, model, tokenizer)
+            pos_eval_out = evaluate(
+                cv_dict["test_pos"], use_shap, model, tokenizer)
             print("breaking...")
             out = out | pos_eval_out
             break
@@ -322,15 +330,14 @@ def eval_only(pos, neg, use_shap):
     return out
 
 
-def return_extreme_values(pos, neg, use_shap: bool, top_p=1.0):
+def return_extreme_values(pos, neg):
     pos2score, neg2score = {}, {}
     pos2highlight, neg2highlight = {}, {}
     text2model = {}
     auc_roc = []
-
     models = []
     for fold_idx, cv_dict in enumerate(cv(pos, neg, NUM_FOLD)):
-        test_scores, model, tokenizer = train_and_eval(cv_dict, use_shap, top_p=top_p)
+        test_scores, model, tokenizer = train_and_eval(cv_dict)
         models.append(model)
         auc_roc.append(test_scores["auc_roc"])
         for pos_text, score in zip(cv_dict["test_pos"], test_scores["test_pos_scores"]):
@@ -343,27 +350,30 @@ def return_extreme_values(pos, neg, use_shap: bool, top_p=1.0):
             neg2score[neg_text] = score
             text2model[neg_text] = fold_idx
 
-    pairs = get_lexical_diversity(pos2score, neg2score)
-
     out = {}
-    # pair = 0.05, 0.20, or 1.0
-    for pair in pairs:
-        pos = pairs[pair]["pos"]
-        neg = pairs[pair]["neg"]
 
-        pos_shapley_highlights = calculate_shapley_values(
-            models, tokenizer, pos, text2model
-        )
-        neg_shapley_highlights = calculate_shapley_values(
-            models, tokenizer, neg, text2model
-        )
+    for i in range(3):
+        out[i] = {}
+        pairs = get_lexical_diversity(pos2score, neg2score)
 
-        out[str(pair)] = {
-            "pos2highlight": pos_shapley_highlights,
-            "neg2highlight": neg_shapley_highlights,
-            "pos": pos,
-            "neg": neg,
-        }
+        # pair = 0.05, 0.20, or 1.0
+        for pair in pairs:
+            pos = pairs[pair]["pos"]
+            neg = pairs[pair]["neg"]
+
+            pos_shapley_highlights = calculate_shapley_values(
+                models, tokenizer, pos, text2model
+            )
+            neg_shapley_highlights = calculate_shapley_values(
+                models, tokenizer, neg, text2model
+            )
+
+            out[i][str(pair)] = {
+                "pos2highlight": pos_shapley_highlights,
+                "neg2highlight": neg_shapley_highlights,
+                "pos": pos,
+                "neg": neg,
+            }
 
     return {
         "pos2score": pos2score,
