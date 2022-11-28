@@ -353,7 +353,7 @@ def return_extreme_values(pos, neg):
     out = {}
 
     for i in range(3):
-        out[i] = {}
+        out[str(i)] = {}
         pairs = get_lexical_diversity(pos2score, neg2score)
 
         # pair = 0.05, 0.20, or 1.0
@@ -368,7 +368,7 @@ def return_extreme_values(pos, neg):
                 models, tokenizer, neg, text2model
             )
 
-            out[i][str(pair)] = {
+            out[str(i)][str(pair)] = {
                 "pos2highlight": pos_shapley_highlights,
                 "neg2highlight": neg_shapley_highlights,
                 "pos": pos,
