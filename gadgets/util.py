@@ -1,4 +1,8 @@
 import torch
+import openai
+import os
+
+openai.api_key = os.environ['openai_key']
 
 def parallelize_across_device(model):
     num_heads = len(model.encoder.block)
@@ -16,3 +20,18 @@ def parallelize_across_device(model):
         cur += other_device_alloc
     print('device_map', device_map)
     model.parallelize(device_map)
+
+
+def gpt3wrapper(max_repeat=20, **arguments):
+    i = 0
+    while i < max_repeat:
+        try:
+            response = openai.Completion.create(**arguments)
+            return response
+        except KeyboardInterrupt:
+            raise KeyboardInterrupt
+        except Exception as e:
+            print(e)
+            time.sleep(1)
+            i += 1
+    return None
