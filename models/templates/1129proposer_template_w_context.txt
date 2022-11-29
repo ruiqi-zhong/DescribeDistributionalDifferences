@@ -1,0 +1,15 @@
+{A_block}
+
+{B_block}
+
+The dataset includes {dataset_description}. The two classes are generated based on {generation}. The Group A snippets {positive_description}, while the Group B snippets {negative_description}. 
+
+I am {user}. My goal is to figure out {target}. 
+
+Please write a list of hypotheses about the datapoints from Group A (listed by bullet points "-"). Each hypothesis should be formatted as a sentence fragment, and here are two examples.
+- "talks about politics, such as presidential election."
+- "contains insulting language for immigrants."
+- "uses double negation, i.e., using two negations in a sentence."
+
+Based on the two sentence groups (A and B) from the above, more sentences in Group A ...
+- "
