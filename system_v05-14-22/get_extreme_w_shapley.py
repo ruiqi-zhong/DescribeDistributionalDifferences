@@ -385,33 +385,29 @@ def get_rep(
 
 
 if __name__ == '__main__':
-    idx = 0
-    distr_pair = json.load(open('benchmark_sec_4/benchmark.json', 'r'))[idx]
-    pos, neg = distr_pair['positive_samples'], distr_pair['negative_samples']
-    # all_shap_results = get_rep(pos, neg, job_name='icml_benchmark_idx%d_debug' % idx)
+    # idx = 0
+    # distr_pair = json.load(open('benchmark_sec_4/benchmark.json', 'r'))[idx]
+    # pos, neg = distr_pair['positive_samples'], distr_pair['negative_samples']
 
-    # this is for debugging, obvious that the model can get auc roc 1.0 and highlitghts steve
-    neg = [x + ' steve ' for x in pos]
-    all_shap_results = get_rep(pos, neg, job_name='icml_benchmark_debug')
+    # # all_shap_results = get_rep(pos, neg, job_name='icml_benchmark_idx%d_debug' % idx)
+    # # this is for debugging, obvious that the model can get auc roc 1.0 and highlitghts steve
+    # neg = [x + ' steve ' for x in pos]
+    # all_shap_results = get_rep(pos, neg, job_name='icml_benchmark_debug')
 
-
-    """
     parser = argparse.ArgumentParser("Trains and evaluates describe difference model")
 
-    parser.add_argument("-p", "--percent", type=str, default="0.05,0.2,1.0")
-    parser.add_argument("-i", "--index", type=int, default=0)
+    parser.add_argument("--percent", type=str, default="0.05,0.2,1.0")
+    parser.add_argument("--data_name", type=str, default="icml_benchmark")
 
     args = parser.parse_args()
     top_ps = [float(f) for f in args.percent.split(",")]
-    index = args.index
+    data_name = args.data_name
+    pair = json.load(open('distr_pairs/%s.json' % data_name, 'r'))
 
     print('top fractions', top_ps)
-    print('distribution index', index)
-    distribution_pairs = json.load(open("../benchmark_sec_4/benchmark_1018.json"))
-    pair = distribution_pairs[index]
-    type = pair["type"]
-    print(f"Running get_rep on category type {type} with index {index} at top percent {top_ps}")
-    job_name = "benchmark_1018-" + "-" + type + "-" + str(index) + "-time" + str(float(time.time()))
+    print('data name', data_name)
+
+    job_name = data_name + "-time" + str(float(time.time()))
 
 
     get_rep(
@@ -420,4 +416,3 @@ if __name__ == '__main__':
         job_name=job_name,
         top_ps=top_ps,
     )
-        """
