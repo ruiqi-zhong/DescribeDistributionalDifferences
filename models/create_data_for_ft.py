@@ -1,9 +1,8 @@
 import numpy as np
 import json
 import tqdm
-from models.preprocess import tok_subspan
+from models.preprocess import tok_subspan, construct_blocks
 from collections import Counter
-
 
 
 def clamp_in_range(ls, lowerbound=-2, upperbound=2):
@@ -28,16 +27,9 @@ def update_ground_truth():
 
 
 proposer_template = open('models/templates/ai2proposer_full.txt').read()
-
 def construct_proposer_prompt(pos_sentences, neg_sentences, num_incontext_samples=4):
-    subsampled_sentences = np.random.choice(pos_sentences, min(num_incontext_samples, len(pos_sentences)), replace=False)
-    subsampled_sentences = ['Group A: ' + tok_subspan(s) + '\n' for s in subsampled_sentences]
-    A_block = ''.join(subsampled_sentences)
-
-    subsampled_sentences = np.random.choice(neg_sentences, min(num_incontext_samples, len(neg_sentences)), replace=False)
-    subsampled_sentences = ['Group B: ' + tok_subspan(s) + '\n' for s in subsampled_sentences]
-    B_block = ''.join(subsampled_sentences)
-
+    d = construct_blocks(pos_sentences, neg_sentences, num_incontext_samples=num_incontext_samples)
+    A_block, B_block = d['A_block'], d['B_block']
     prompt = proposer_template.format(A_block=A_block, B_block=B_block)
     return prompt
 
