@@ -1,0 +1,29 @@
+Rewrite a property such that 1) it is not a comparison between two pieces of text, and 2) remove all occurrences of Group B. If it does not contain a comparison in the first place, keep it the same.
+
+Example 1
+Property: mention people's names more often
+Output: mention people's names
+
+Example 2
+Property: references historical events
+Output: references historical events
+
+Example 3
+Property: uses higher numbers in the negotiation
+Output: uses high numbers in the negotiation
+
+Example 4
+Property: contains more direct language
+Output: contain direct language
+
+Example 5
+Property: uses more ambiguity than group B
+Output: uses more ambiguity
+
+Example 6
+Property: mentions global topics such as economic mobility, inequality and diversity
+Output: mentions global topics such as economic mobility, inequality and diversity
+
+Now complete the following example.
+Property: {hypothesis}
+Output:

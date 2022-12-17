@@ -1,0 +1,49 @@
+Task Definition: In this task, you will be comparing which one of the option satisfy a property more. You can choose either sentence, both, or neither.
+
+Example 1:
+Property: is more positive.
+Option A) Really exciting.
+Option B) Boring.
+Option C) Neither
+Option D) Both
+Answer: A
+
+Example 2:
+Property: talks about sports.
+Option A) I hate this song.
+Option B) Basketballs are great!
+Option C) Neither
+Option D) Both
+Answer: B
+
+Example 3:
+Property: is longer in length.
+Option A) I love Makima and I want to be her dog.
+Option B) Woof!
+Option C) Neither
+Option D) Both
+Answer: A
+
+Example 4:
+Property: talks about science.
+Option A) I hate this song.
+Option B) I love this song.
+Option C) Neither
+Option D) Both
+Answer: C
+
+Example 5:
+Property: discusses technology.
+Option A) CoPilot is a pretty useful tool for coding.
+Option B) Siri is really intelligent and it told me a pretty good joke. 
+Option C) Neither
+Option D) Both
+Answer: D
+
+Now complete the following:
+Property: {hypothesis}
+Option A) {sent_A}
+Option B) {sent_B}
+Option C) Neither
+Option D) Both
+Answer:

@@ -1,0 +1,16 @@
+{A_block}
+
+{B_block}
+
+(some of the sentences are truncated for brevity)
+
+Please write a list of hypotheses about how the datapoints from Group A are different from those from Group B (listed by bullet points "-"), and you should write the hypotheses more supported by the data at the beginning. Each hypothesis should be formatted as a sentence fragment, and here are three examples.
+- "talks about politics, such as presidential election."
+- "contains insulting language for immigrants."
+- "uses double negation, i.e., using two negations in a sentence."
+
+
+Please write hypotheses that can be verified on individual (or a pair of) text samples. For example, you can write "indicates that the speaker is not feeling comfortable" or "uses more adjectives", but not "more likely to discuss sports-related topics than group B" or "contain a diverse range of topics."
+
+Let's get started! Based on the two sentence groups (A and B) from the above, more sentences in Group A ...
+- "

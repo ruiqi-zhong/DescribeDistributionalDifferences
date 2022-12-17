@@ -13,5 +13,8 @@ Please write a list of hypotheses about the datapoints from Group A (listed by b
 - "contains insulting language for immigrants."
 - "uses double negation, i.e., using two negations in a sentence."
 
-Based on the two sentence groups (A and B) from the above, more sentences in Group A ...
+
+Please write hypotheses that can be verified on individual (or a pair of) text samples. For example, you can write "indicates that the speaker is not feeling comfortable" or "uses more adjectives", but not "more likely to discuss sports-related topics than group B" or "contain a diverse range of topics."
+
+Let's get started! I am {user}. My goal is to figure out {target}. Based on the two sentence groups (A and B) from the above, more sentences in Group A ...
 - "

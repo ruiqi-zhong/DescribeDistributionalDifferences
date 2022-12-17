@@ -1,0 +1,48 @@
+Task Definition: In this task, you will be comparing which one of the option satisfy a property more. You can choose either sentence, both, or neither.
+Example 1:
+Property: discusses nature.
+Option A) I love the way the sun sets in the evening.
+Option B) The new iPhone is really cool.
+Option C) Neither
+Option D) Both
+Answer: A
+
+Example 2:
+Property: is shorter in length.
+Option A) I love Makima and I want to be her dog.
+Option B) Woof!
+Option C) Neither
+Option D) Both
+Answer: B
+
+Example 3:
+Property: is more creative.
+Option A) I hate this song.
+Option B) I drew a picture.
+Option C) Neither
+Option D) Both
+Answer: B
+
+Example 4:
+Property: uses a quantifier in the sentence.
+Option A) Every time I tried it, it worked.
+Option B) Never say never.
+Option C) Neither
+Option D) Both
+Answer: D
+
+Example 5:
+Property: is optimistic.
+Option A) I can't see anyway out of this dilemma.
+Option B) It will never work. Like ever.
+Option C) Neither
+Option D) Both
+Answer: C
+
+Now complete the following:
+Property: {hypothesis}
+Option A) {sent_A}
+Option B) {sent_B}
+Option C) Neither
+Option D) Both
+Answer:

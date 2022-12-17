@@ -5,10 +5,13 @@ import time
 from transformers import GPT2Tokenizer
 from tqdm import tqdm
 import random
+import json
 
 tok = GPT2Tokenizer.from_pretrained('gpt2')
 
 openai.api_key = os.environ['openai_key']
+
+query_logs_dir = 'querylogs/'
 
 def parallelize_across_device(model):
     num_heads = len(model.encoder.block)
@@ -28,7 +31,7 @@ def parallelize_across_device(model):
     model.parallelize(device_map)
 
 
-def gpt3wrapper(max_repeat=20, **arguments):
+def gpt3wrapper(max_repeat=20, tag="no-tag", **arguments):
     i = 0
     while i < max_repeat:
         try:
@@ -36,6 +39,8 @@ def gpt3wrapper(max_repeat=20, **arguments):
             response = openai.Completion.create(**arguments)
             end_time = time.time()
             print('completed one query in', end_time - start_time)
+            with open(query_logs_dir + tag + '.json', 'a') as f:
+                f.write(json.dumps(response))
             return response
         except KeyboardInterrupt:
             raise KeyboardInterrupt
@@ -139,3 +144,13 @@ def convert_cmp_hs(hyps):
     print('sus count', '->'.join(str(c) for c in sus_counts))
     
     return new_hyps, [sus(h) for h in new_hyps], success
+
+classify_cmp_template = open('models/templates/classify_comparison.txt').read()
+def classify_cmp(i):
+    prompt = classify_cmp_template.format(input=i)
+    response = gpt3wrapper(prompt=prompt, max_tokens=5, temperature=0.0, top_p=1, frequency_penalty=0.0, presence_penalty=0.0, engine='text-davinci-002', tag='classify_cmp')
+    if response is None:
+        return False
+    raw_text = response['choices'][0]['text'].strip()
+    return 'yes' in raw_text.lower()
+

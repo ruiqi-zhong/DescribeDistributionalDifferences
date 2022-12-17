@@ -1,0 +1,17 @@
+Classify whether a sentence fragment involves a comparison. Answer Yes or No.
+
+Example 1:
+Input: is happy
+Output: No
+
+Example 2:
+Input: contains more adjectives
+Output: Yes
+
+Example 3:
+Input: has a higher number
+Output: Yes
+
+Now respond to the input below
+Input: {input}
+Output:
