@@ -1,0 +1,23 @@
+{
+  "AutoApprovalDelayInSeconds": 300,
+  "AssignmentDurationInSeconds": 600,
+  "Reward": "0.20",
+  "Title": "Verify whether a property holds for a text. (occasionally contain offensive content)",
+  "Keywords": "Rating",
+  "Description": "Verify whether a property holds for a text.",
+  "QualificationRequirements": [
+    {
+      "QualificationTypeId": "3LRUXMYH0QQ5EE4G8UKFAZ5S0VJ291",
+      "Comparator": "GreaterThanOrEqualTo",
+      "IntegerValues": [
+        90
+      ],
+      "RequiredToPreview": false
+    },
+    {
+      "QualificationTypeId": "00000000000000000071",
+  	  "Comparator": "EqualTo",
+  	  "LocaleValues":[{"Country":"US"}]
+    }
+  ]
+}

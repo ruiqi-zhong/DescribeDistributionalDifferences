@@ -1,0 +1,341 @@
+<QuestionForm xmlns="http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2017-11-06/QuestionForm.xsd">
+    <Overview>
+        <Title>Checking properties for a pair of sentences, qualification test</Title>
+    </Overview>
+
+    <Overview>
+        <FormattedContent>
+            <![CDATA[
+            <p> <b>Please read the examples carefully; the qualification is extremely easy after you read this instruction, but if you don't read it you might not be able to pass.</b></p>
+
+            <br/><br/>
+
+            Task Definition: In this task, you will choose which sentence satisfies a property, e.g., is about sports; you can choose either sentence, both, or neither. <br/>
+            If the property is a comparison (e.g., is longER), you need to choose which one of the option satisfy the property more. <br/><br/>
+            
+            Example 1:<br/>
+            Property: discusses nature.<br/><br/>
+            Option A) I love the way the sun sets in the evening.<br/>
+            Option B) The new iPhone is really cool.<br/>
+            Option C) Neither<br/>
+            Option D) Both<br/>
+            Answer: A<br/>
+            Explanation: sun set is more nature related. <br/><br/>
+
+            Example 2:<br/>
+            Property: is shorter in length.<br/><br/>
+            Option A) I love Makima and I want to be her dog.<br/>
+            Option B) Woof!<br/>
+            Option C) Neither<br/>
+            Option D) Both<br/>
+            Answer: B<br/>
+            Explanation: B only contains 1 word, while A has much more.<br/><br/>
+
+            Example 4:<br/>
+            Property: uses a quantifier in the sentence.<br/><br/>
+            Option A) Every time I tried it, it worked.<br/>
+            Option B) Never say never.<br/>
+            Option C) Neither<br/>
+            Option D) Both<br/>
+            Answer: D<br/>
+            Explanation: "Never" and "every" are both quantifiers..<br/><br/>
+
+            Example 5:<br/>
+            Property: is optimistic.<br/><br/>
+            Option A) I can't see anyway out of this dilemma.<br/>
+            Option B) It will never work. Like ever.<br/>
+            Option C) Neither<br/>
+            Option D) Both<br/>
+            Answer: C.<br/>
+            Explanation: Niether is the correct answer because the sentence is pessimistic.<br/><br/>
+
+            Example 6:<br/>
+            Property: appreciates the breakfast provided by the airline.<br/><br/>
+            Option A) The plane staff was really great!<br/>
+            Option B) Love the seating on the chair; very comfortable.<br/>
+            Option C) Neither<br/>
+            Option D) Both<br/>
+            Answer: C.<br/>
+            Explanation: Niether is the correct. Though both A and B like the airline, they are not about its breakfast. <br/><br/>
+
+            !!BE CAREFUL!!: the property we will ask you to compare can change from question to question, so make sure you read the property carefully.<br/><br/>
+            Now complete the following questions. Our qualification questions are super easy but you need full score to proceed.
+            ]]>
+        </FormattedContent>
+
+    </Overview>
+
+    <!-- QUESTION ONE -->
+    <Question>
+        <QuestionIdentifier>001</QuestionIdentifier>
+        <DisplayName>Question 1</DisplayName>
+        <IsRequired>true</IsRequired>
+
+        <QuestionContent>
+            <Text>Property: talks about sports. </Text>
+        </QuestionContent>
+
+        <AnswerSpecification>
+            <SelectionAnswer>
+                <StyleSuggestion>radiobutton</StyleSuggestion>
+                <Selections>
+                    <Selection>
+                        <SelectionIdentifier>A</SelectionIdentifier>
+                        <Text>A) I hate this song.</Text>
+                    </Selection>
+                    <Selection>
+                        <SelectionIdentifier>B</SelectionIdentifier>
+                        <Text>B) Basketballs are great!</Text>
+                    </Selection>
+                    <Selection>
+                        <SelectionIdentifier>C</SelectionIdentifier>
+                        <Text>C) Neither</Text>
+                    </Selection>
+                    <Selection>
+                        <SelectionIdentifier>D</SelectionIdentifier>
+                        <Text>D) Both</Text>
+                    </Selection>
+                </Selections>
+            </SelectionAnswer>
+        </AnswerSpecification>
+    </Question>
+
+    <Question>
+        <QuestionIdentifier>002</QuestionIdentifier>
+        <DisplayName>Question 2</DisplayName>
+        <IsRequired>true</IsRequired>
+
+        <QuestionContent>
+            <Text>Property: contains a negation. </Text>
+        </QuestionContent>
+
+        <AnswerSpecification>
+            <SelectionAnswer>
+                <StyleSuggestion>radiobutton</StyleSuggestion>
+                <Selections>
+                    <Selection>
+                        <SelectionIdentifier>A</SelectionIdentifier>
+                        <Text>A) I don't like the song.</Text>
+                    </Selection>
+                    <Selection>
+                        <SelectionIdentifier>B</SelectionIdentifier>
+                        <Text>B) I haven't swum for a long time.</Text>
+                    </Selection>
+                    <Selection>
+                        <SelectionIdentifier>C</SelectionIdentifier>
+                        <Text>C) Neither</Text>
+                    </Selection>
+                    <Selection>
+                        <SelectionIdentifier>D</SelectionIdentifier>
+                        <Text>D) Both</Text>
+                    </Selection>
+                </Selections>
+            </SelectionAnswer>
+        </AnswerSpecification>
+    </Question>
+
+    <Question>
+    <QuestionIdentifier>003</QuestionIdentifier>
+        <DisplayName>Question 3</DisplayName>
+        <IsRequired>true</IsRequired>
+
+        <QuestionContent>
+            <Text>Property: is more polite. </Text>
+        </QuestionContent>
+
+        <AnswerSpecification>
+            <SelectionAnswer>
+                <StyleSuggestion>radiobutton</StyleSuggestion>
+                <Selections>
+                    <Selection>
+                        <SelectionIdentifier>A</SelectionIdentifier>
+                        <Text>A) Would you mind giving me this cup please? Thanks a lot! really appreciate it.</Text>
+                    </Selection>
+                    <Selection>
+                        <SelectionIdentifier>B</SelectionIdentifier>
+                        <Text>B) Can you give me this cup please?</Text>
+                    </Selection>
+                    <Selection>
+                        <SelectionIdentifier>C</SelectionIdentifier>
+                        <Text>C) Neither</Text>
+                    </Selection>
+                    <Selection>
+                        <SelectionIdentifier>D</SelectionIdentifier>
+                        <Text>D) Both</Text>
+                    </Selection>
+                </Selections>
+            </SelectionAnswer>
+        </AnswerSpecification>
+    </Question>
+
+    <Question>
+    <QuestionIdentifier>004</QuestionIdentifier>
+        <DisplayName>Question 4</DisplayName>
+        <IsRequired>true</IsRequired>
+
+        <QuestionContent>
+            <Text>Property: is a positive review. </Text>
+        </QuestionContent>
+
+        <AnswerSpecification>
+            <SelectionAnswer>
+                <StyleSuggestion>radiobutton</StyleSuggestion>
+                <Selections>
+                    <Selection>
+                        <SelectionIdentifier>A</SelectionIdentifier>
+                        <Text>A) Really love this film.</Text>
+                    </Selection>
+                    <Selection>
+                        <SelectionIdentifier>B</SelectionIdentifier>
+                        <Text>B) Great film.</Text>
+                    </Selection>
+                    <Selection>
+                        <SelectionIdentifier>C</SelectionIdentifier>
+                        <Text>C) Neither</Text>
+                    </Selection>
+                    <Selection>
+                        <SelectionIdentifier>D</SelectionIdentifier>
+                        <Text>D) Both</Text>
+                    </Selection>
+                </Selections>
+            </SelectionAnswer>
+        </AnswerSpecification>
+    </Question>
+
+    <Question>
+    <QuestionIdentifier>005</QuestionIdentifier>
+        <DisplayName>Question 5</DisplayName>
+        <IsRequired>true</IsRequired>
+
+        <QuestionContent>
+            <Text>Property: is a positive review. </Text>
+        </QuestionContent>
+
+        <AnswerSpecification>
+            <SelectionAnswer>
+                <StyleSuggestion>radiobutton</StyleSuggestion>
+                <Selections>
+                    <Selection>
+                        <SelectionIdentifier>A</SelectionIdentifier>
+                        <Text>A) Bad film.</Text>
+                    </Selection>
+                    <Selection>
+                        <SelectionIdentifier>B</SelectionIdentifier>
+                        <Text>B) Total waste of time.</Text>
+                    </Selection>
+                    <Selection>
+                        <SelectionIdentifier>C</SelectionIdentifier>
+                        <Text>C) Neither</Text>
+                    </Selection>
+                    <Selection>
+                        <SelectionIdentifier>D</SelectionIdentifier>
+                        <Text>D) Both</Text>
+                    </Selection>
+                </Selections>
+            </SelectionAnswer>
+        </AnswerSpecification>
+    </Question>
+
+    <Question>
+    <QuestionIdentifier>006</QuestionIdentifier>
+        <DisplayName>Question 6</DisplayName>
+        <IsRequired>true</IsRequired>
+
+        <QuestionContent>
+            <Text>Property: is a negative review. </Text>
+        </QuestionContent>
+
+        <AnswerSpecification>
+            <SelectionAnswer>
+                <StyleSuggestion>radiobutton</StyleSuggestion>
+                <Selections>
+                    <Selection>
+                        <SelectionIdentifier>A</SelectionIdentifier>
+                        <Text>A) Great film.</Text>
+                    </Selection>
+                    <Selection>
+                        <SelectionIdentifier>B</SelectionIdentifier>
+                        <Text>B) Really like this movie.</Text>
+                    </Selection>
+                    <Selection>
+                        <SelectionIdentifier>C</SelectionIdentifier>
+                        <Text>C) Neither</Text>
+                    </Selection>
+                    <Selection>
+                        <SelectionIdentifier>D</SelectionIdentifier>
+                        <Text>D) Both</Text>
+                    </Selection>
+                </Selections>
+            </SelectionAnswer>
+        </AnswerSpecification>
+    </Question>
+
+    <Question>
+    <QuestionIdentifier>007</QuestionIdentifier>
+        <DisplayName>Question 7</DisplayName>
+        <IsRequired>true</IsRequired>
+
+        <QuestionContent>
+            <Text>Property: mentions that the professor is very passionate. </Text>
+        </QuestionContent>
+
+        <AnswerSpecification>
+            <SelectionAnswer>
+                <StyleSuggestion>radiobutton</StyleSuggestion>
+                <Selections>
+                    <Selection>
+                        <SelectionIdentifier>A</SelectionIdentifier>
+                        <Text>A) The prof really loves teaching, spent a lot of time preparing the class material, and answer questions whenever possible. </Text>
+                    </Selection>
+                    <Selection>
+                        <SelectionIdentifier>B</SelectionIdentifier>
+                        <Text>B) The class is very well-organized, and the lecture is very easy to follow.</Text>
+                    </Selection>
+                    <Selection>
+                        <SelectionIdentifier>C</SelectionIdentifier>
+                        <Text>C) Neither</Text>
+                    </Selection>
+                    <Selection>
+                        <SelectionIdentifier>D</SelectionIdentifier>
+                        <Text>D) Both</Text>
+                    </Selection>
+                </Selections>
+            </SelectionAnswer>
+        </AnswerSpecification>
+    </Question>
+
+    <Question>
+    <QuestionIdentifier>008</QuestionIdentifier>
+        <DisplayName>Question 8</DisplayName>
+        <IsRequired>true</IsRequired>
+
+        <QuestionContent>
+            <Text>Property: is hard to understand because of difficult terminologies.</Text>
+        </QuestionContent>
+
+        <AnswerSpecification>
+            <SelectionAnswer>
+                <StyleSuggestion>radiobutton</StyleSuggestion>
+                <Selections>
+                    <Selection>
+                        <SelectionIdentifier>A</SelectionIdentifier>
+                        <Text>A) As a second language speaker I find this text hard to follow. I need to practice my English a bit more. </Text>
+                    </Selection>
+                    <Selection>
+                        <SelectionIdentifier>B</SelectionIdentifier>
+                        <Text>B) The blog just contains too many technical jargons and I don't get it. What is CNN / FLAN / RLHF???</Text>
+                    </Selection>
+                    <Selection>
+                        <SelectionIdentifier>C</SelectionIdentifier>
+                        <Text>C) Neither</Text>
+                    </Selection>
+                    <Selection>
+                        <SelectionIdentifier>D</SelectionIdentifier>
+                        <Text>D) Both</Text>
+                    </Selection>
+                </Selections>
+            </SelectionAnswer>
+        </AnswerSpecification>
+    </Question>
+
+</QuestionForm>

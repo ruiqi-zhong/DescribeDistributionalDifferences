@@ -1,0 +1,8 @@
+{
+  "Name": "Individual sentences property verification",
+  "Keywords": "nlp",
+  "Description": "Qualification exam for verifying properties of senetences",
+  "QualificationTypeStatus": "Active",
+  "RetryDelayInSeconds": 86400, 
+  "TestDurationInSeconds": 3600
+}

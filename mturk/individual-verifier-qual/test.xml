@@ -1,0 +1,327 @@
+<QuestionForm xmlns="http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2017-11-06/QuestionForm.xsd">
+    <Overview>
+        <Title>Checking properties for individual sentences, qualification test</Title>
+    </Overview>
+
+    <Overview>
+        <FormattedContent>
+        
+            <![CDATA[
+            <p> <b>Please read the examples carefully; the qualification is extremely easy after you read this instruction, but if you don't read it you might not be able to pass.</b></p>
+
+            <br/><br/>
+
+            Task Definition: In this task, you will check whether a TEXT satisfies a PROPERTY<br/><br/>
+            Example 1:<br/>
+            Property: mentions a natural scene.<br/>
+            Text: I love the way the sun sets in the evening.<br/><br/>
+            Option A) Certainly Yes.<br/>
+            Option B) Likely Yes.<br/>
+            Option C) Neutral<br/>
+            Option D) Likely No.<br/>
+            Option E) Certainly No.<br/>
+            Option F) Confusing/Cannot be decided.
+            Answer: A<br/>
+            Explanation: sun set is nature-related; if you feel a bit ambivalent, B is also acceptable.<br/><br/>
+
+            Example 2:<br/>
+            Property: writes in a 1st person perspective.<br/>
+            Text: Jacob is smart.<br/><br/>
+            Option A) Certainly Yes.<br/>
+            Option B) Likely Yes.<br/>
+            Option C) Neutral<br/>
+            Option D) Likely No.<br/>
+            Option E) Certainly No.<br/>
+            Option F) Confusing/Cannot be decided.
+            Answer: E<br/>
+            Explanation: This text is undoubtedly written in the 3rd person perspetive, so E.<br/><br/>
+
+            Example 3:<br/>
+            Property: is better than group B.<br/>
+            Text: I also need to buy a chair.<br/><br/>
+            Option A) Certainly Yes.<br/>
+            Option B) Likely Yes.<br/>
+            Option C) Neutral<br/>
+            Option D) Likely No.<br/>
+            Option E) Certainly No.<br/>
+            Option F) Confusing/Cannot be decided.
+            Answer: F<br/>
+            Explanation: It is unclear what the hypothesis mean (e.g., what does group B mean?) and doesn't seem related to the text. So F.<br/><br/>
+
+            Example 4:<br/>
+            Property: mentions that the breakfast is good on the airline.<br/>
+            Text: The airline staff was really nice! Enjoyable flight.<br/><br/>
+            Option A) Certainly Yes.<br/>
+            Option B) Likely Yes.<br/>
+            Option C) Neutral<br/>
+            Option D) Likely No.<br/>
+            Option E) Certainly No.<br/>
+            Option F) Confusing/Cannot be decided.
+            Answer: E<br/>
+            Explanation: Although the text appreciates the flight experience, it DOES NOT mention about the breakfast. So the answer is E.<br/><br/>
+
+            Example 5:<br/>
+            Property: appreciates the writing style of the author.<br/>
+            Text: The paper absolutely sucks because its underlying logic is wrong. However, the presentation of the paper is clear and the use of language is really impressive.<br/><br/>
+            Option A) Certainly Yes.<br/>
+            Option B) Likely Yes.<br/>
+            Option C) Neutral<br/>
+            Option D) Likely No.<br/>
+            Option E) Certainly No.<br/>
+            Option F) Confusing/Cannot be decided.
+            Answer: A<br/>
+            Explanation: Although the text dislikes the paper, it DOES like the writing style. So the answer is A.<br/><br/>
+
+            !!BE CAREFUL!!: the property we will ask you to compare can change from page to page, so make sure you read the property carefully.<br/><br/>
+            Now complete the following questions. Our qualification questions are super easy but you need a high score to proceed.
+            ]]>
+        
+
+        </FormattedContent>
+
+    </Overview>
+
+    <!-- QUESTION ONE -->
+    <Question>
+        <QuestionIdentifier>001</QuestionIdentifier>
+        <DisplayName>Question 1</DisplayName>
+        <IsRequired>true</IsRequired>
+
+        <QuestionContent>
+            <Text>Property: talks about sports. </Text> 
+            <Text>Text: I like basketballs. </Text>
+        </QuestionContent>
+
+        <AnswerSpecification>
+            <SelectionAnswer>
+                <StyleSuggestion>radiobutton</StyleSuggestion>
+                <Selections>
+                    <Selection>
+                        <SelectionIdentifier>A</SelectionIdentifier>
+                        <Text>A) Certainly Yes.</Text>
+                    </Selection>
+                    <Selection>
+                        <SelectionIdentifier>E</SelectionIdentifier>
+                        <Text>E) Certainly No.</Text>
+                    </Selection>
+                    <Selection>
+                        <SelectionIdentifier>F</SelectionIdentifier>
+                        <Text>F) Confusing/Cannot be decided.</Text>
+                    </Selection>
+                </Selections>
+            </SelectionAnswer>
+        </AnswerSpecification>
+    </Question>
+
+
+    <Question>
+        <QuestionIdentifier>002</QuestionIdentifier>
+        <DisplayName>Question 2</DisplayName>
+        <IsRequired>true</IsRequired>
+        <QuestionContent>
+        <Text>Property: contains a negation.</Text>
+        <Text>Text: Today is a sunny day.</Text> 
+        </QuestionContent>
+
+        <AnswerSpecification>
+            <SelectionAnswer>
+                <StyleSuggestion>radiobutton</StyleSuggestion>
+                <Selections>
+                    <Selection>
+                        <SelectionIdentifier>A</SelectionIdentifier>
+                        <Text>A) Certainly Yes.</Text>
+                    </Selection>
+                    <Selection>
+                        <SelectionIdentifier>E</SelectionIdentifier>
+                        <Text>E) Certainly No.</Text>
+                    </Selection>
+                    <Selection>
+                        <SelectionIdentifier>F</SelectionIdentifier>
+                        <Text>F) Confusing/Cannot be decided.</Text>
+                    </Selection>
+                </Selections>
+            </SelectionAnswer>
+        </AnswerSpecification>
+    </Question>
+
+    <Question>
+        <QuestionIdentifier>003</QuestionIdentifier>
+        <DisplayName>Question 3</DisplayName>
+        <IsRequired>true</IsRequired>
+
+        <QuestionContent>
+            <Text>Property: sounds polite.</Text>
+            <Text>Text: What the f**k is that?</Text>
+        </QuestionContent>
+        <AnswerSpecification>
+            <SelectionAnswer>
+                <StyleSuggestion>radiobutton</StyleSuggestion>
+                <Selections>
+                    <Selection>
+                        <SelectionIdentifier>A</SelectionIdentifier>
+                        <Text>A) Certainly Yes.</Text>
+                    </Selection>
+                    <Selection>
+                        <SelectionIdentifier>E</SelectionIdentifier>
+                        <Text>E) Certainly No.</Text>
+                    </Selection>
+                    <Selection>
+                        <SelectionIdentifier>F</SelectionIdentifier>
+                        <Text>F) Confusing/Cannot be decided.</Text>
+                    </Selection>
+                </Selections>
+            </SelectionAnswer>
+        </AnswerSpecification>
+    </Question>
+
+    <Question>
+        <QuestionIdentifier>004</QuestionIdentifier>
+        <DisplayName>Question 4</DisplayName>
+        <IsRequired>true</IsRequired>
+
+        <QuestionContent>
+            <Text>Property: Woof!!</Text>
+            <Text>Text: I have been working for a long time.</Text>
+        </QuestionContent>
+        <AnswerSpecification>
+            <SelectionAnswer>
+                <StyleSuggestion>radiobutton</StyleSuggestion>
+                <Selections>
+                    <Selection>
+                        <SelectionIdentifier>A</SelectionIdentifier>
+                        <Text>A) Certainly Yes.</Text>
+                    </Selection>
+                    <Selection>
+                        <SelectionIdentifier>E</SelectionIdentifier>
+                        <Text>E) Certainly No.</Text>
+                    </Selection>
+                    <Selection>
+                        <SelectionIdentifier>F</SelectionIdentifier>
+                        <Text>F) Confusing/Cannot be decided.</Text>
+                    </Selection>
+                </Selections>
+            </SelectionAnswer>
+        </AnswerSpecification>
+    </Question>
+
+    <Question>
+        <QuestionIdentifier>005</QuestionIdentifier>
+        <DisplayName>Question 5</DisplayName>
+        <IsRequired>true</IsRequired>
+
+        <QuestionContent>
+            <Text>Property: is a positive review.</Text>
+            <Text>Text: Great movie!!</Text>
+        </QuestionContent>
+        <AnswerSpecification>
+            <SelectionAnswer>
+                <StyleSuggestion>radiobutton</StyleSuggestion>
+                <Selections>
+                    <Selection>
+                        <SelectionIdentifier>A</SelectionIdentifier>
+                        <Text>A) Certainly Yes.</Text>
+                    </Selection>
+                    <Selection>
+                        <SelectionIdentifier>E</SelectionIdentifier>
+                        <Text>E) Certainly No.</Text>
+                    </Selection>
+                    <Selection>
+                        <SelectionIdentifier>F</SelectionIdentifier>
+                        <Text>F) Confusing/Cannot be decided.</Text>
+                    </Selection>
+                </Selections>
+            </SelectionAnswer>
+        </AnswerSpecification>
+    </Question>
+
+    <Question>
+        <QuestionIdentifier>006</QuestionIdentifier>
+        <DisplayName>Question 6</DisplayName>
+        <IsRequired>true</IsRequired>
+
+        <QuestionContent>
+            <Text>Property: is a negative review.</Text>
+            <Text>Text: Great movie!!</Text>
+        </QuestionContent>
+        <AnswerSpecification>
+            <SelectionAnswer>
+                <StyleSuggestion>radiobutton</StyleSuggestion>
+                <Selections>
+                    <Selection>
+                        <SelectionIdentifier>A</SelectionIdentifier>
+                        <Text>A) Certainly Yes.</Text>
+                    </Selection>
+                    <Selection>
+                        <SelectionIdentifier>E</SelectionIdentifier>
+                        <Text>E) Certainly No.</Text>
+                    </Selection>
+                    <Selection>
+                        <SelectionIdentifier>F</SelectionIdentifier>
+                        <Text>F) Confusing/Cannot be decided.</Text>
+                    </Selection>
+                </Selections>
+            </SelectionAnswer>
+        </AnswerSpecification>
+    </Question>
+
+    <Question>
+        <QuestionIdentifier>007</QuestionIdentifier>
+        <DisplayName>Question 7</DisplayName>
+        <IsRequired>true</IsRequired>
+
+        <QuestionContent>
+            <Text>Property: appreciates the speaking skill of a person.</Text>
+            <Text>Text: I hate his policy but his speech are all very inspiring.</Text>
+        </QuestionContent>
+        <AnswerSpecification>
+            <SelectionAnswer>
+                <StyleSuggestion>radiobutton</StyleSuggestion>
+                <Selections>
+                    <Selection>
+                        <SelectionIdentifier>A</SelectionIdentifier>
+                        <Text>A) Certainly Yes.</Text>
+                    </Selection>
+                    <Selection>
+                        <SelectionIdentifier>E</SelectionIdentifier>
+                        <Text>E) Certainly No.</Text>
+                    </Selection>
+                    <Selection>
+                        <SelectionIdentifier>F</SelectionIdentifier>
+                        <Text>F) Confusing/Cannot be decided.</Text>
+                    </Selection>
+                </Selections>
+            </SelectionAnswer>
+        </AnswerSpecification>
+    </Question>
+
+    <Question>
+        <QuestionIdentifier>008</QuestionIdentifier>
+        <DisplayName>Question 8</DisplayName>
+        <IsRequired>true</IsRequired>
+
+        <QuestionContent>
+            <Text>Property: complains that the price is too high.</Text>
+            <Text>Text: I hate this produce because it doesn't work at all.</Text>
+        </QuestionContent>
+        <AnswerSpecification>
+            <SelectionAnswer>
+                <StyleSuggestion>radiobutton</StyleSuggestion>
+                <Selections>
+                    <Selection>
+                        <SelectionIdentifier>A</SelectionIdentifier>
+                        <Text>A) Certainly Yes.</Text>
+                    </Selection>
+                    <Selection>
+                        <SelectionIdentifier>E</SelectionIdentifier>
+                        <Text>E) Certainly No.</Text>
+                    </Selection>
+                    <Selection>
+                        <SelectionIdentifier>F</SelectionIdentifier>
+                        <Text>F) Confusing/Cannot be decided.</Text>
+                    </Selection>
+                </Selections>
+            </SelectionAnswer>
+        </AnswerSpecification>
+    </Question>
+
+</QuestionForm>

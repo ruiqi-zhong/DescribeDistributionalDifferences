@@ -1,0 +1,23 @@
+{
+  "AutoApprovalDelayInSeconds": 300,
+  "AssignmentDurationInSeconds": 600,
+  "Reward": "0.2",
+  "Title": "Which text satisifes the property more? (occasionally contain offensive content)",
+  "Keywords": "Rating",
+  "Description": "Check which text satisfies a property more.",
+  "QualificationRequirements": [
+    {
+      "QualificationTypeId": "37U405KO6B69E6N7Q04ULQW7AMEG3H",
+      "Comparator": "GreaterThanOrEqualTo",
+      "IntegerValues": [
+        90
+      ],
+      "RequiredToPreview": false
+    },
+    {
+      "QualificationTypeId": "00000000000000000071",
+  	  "Comparator": "EqualTo",
+  	  "LocaleValues":[{"Country":"US"}]
+    }
+  ]
+}

@@ -1,0 +1,66 @@
+<HTMLQuestion xmlns="http://mechanicalturk.amazonaws.com/AWSMechanicalTurkDataSchemas/2011-11-11/HTMLQuestion.xsd">
+  <HTMLContent>
+    <![CDATA[
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <meta http-equiv='Content-Type' content='text/html; charset=UTF-8'/>
+          <script type='text/javascript' src='https://s3.amazonaws.com/mturk-public/externalHIT_v1.js'></script>
+        </head>
+
+        <body>
+          In this task, you will choose which option satisfies a property, e.g., is about sports; you can choose either sentence, both, or neither. <br/>
+          If the property is a comparison (e.g., is longER), you need to choose which one of the option satisfy the property more. <br/><br/>
+            
+          <form name='mturk_form' method='post' id='mturk_form' action='/mturk/externalSubmit'>
+            <input type='hidden' value='' name='assignmentId' id='assignmentId'/>
+              <br>
+              <p style="color:red;">PROPERTY: <b>{{ hypothesis }}</b></p>
+              <input type="radio" id="q0A" name="q0" value="A" /> {{ text_A0 }}<br>
+              <input type="radio" id="q0B" name="q0" value="B" /> {{ text_B0 }}<br>
+              <input type="radio" id="q0C" name="q0" value="C" /> Neither <br>
+              <input type="radio" id="q0D" name="q0" value="D" /> Both <br>
+              <input type="radio" id="q0-1" name="q0" value="-1" />Confusing/Cannot be decided<br>
+              <br>
+
+              <p style="color:red;">PROPERTY: <b>{{ hypothesis }}</b></p>
+              <input type="radio" id="q1A" name="q1" value="A" /> {{ text_A1 }}<br>
+              <input type="radio" id="q1B" name="q1" value="B" /> {{ text_B1 }}<br>
+              <input type="radio" id="q1C" name="q1" value="C" /> Neither <br>
+              <input type="radio" id="q1D" name="q1" value="D" /> Both <br>
+              <input type="radio" id="q1-1" name="q1" value="-1" />Confusing/Cannot be decided<br>
+              <br>
+
+              <p style="color:red;">PROPERTY: <b>{{ hypothesis }}</b></p>
+              <input type="radio" id="q2A" name="q2" value="A" /> {{ text_A2 }}<br>
+              <input type="radio" id="q2B" name="q2" value="B" /> {{ text_B2 }}<br>
+              <input type="radio" id="q2C" name="q2" value="C" /> Neither <br>
+              <input type="radio" id="q2D" name="q2" value="D" /> Both <br>
+              <input type="radio" id="q2-1" name="q2" value="-1" />Confusing/Cannot be decided<br>
+              <br>
+
+              <p style="color:red;">PROPERTY: <b>{{ hypothesis }}</b></p>
+              <input type="radio" id="q3A" name="q3" value="A" /> {{ text_A3 }}<br>
+              <input type="radio" id="q3B" name="q3" value="B" /> {{ text_B3 }}<br>
+              <input type="radio" id="q3C" name="q3" value="C" /> Neither <br>
+              <input type="radio" id="q3D" name="q3" value="D" /> Both <br>
+              <input type="radio" id="q3-1" name="q3" value="-1" />Confusing/Cannot be decided<br>
+              <br>
+
+              <p style="color:red;">PROPERTY: <b>{{ hypothesis }}</b></p>
+              <input type="radio" id="q4A" name="q4" value="A" /> {{ text_A4 }}<br>
+              <input type="radio" id="q4B" name="q4" value="B" /> {{ text_B4 }}<br>
+              <input type="radio" id="q4C" name="q4" value="C" /> Neither <br>
+              <input type="radio" id="q4D" name="q4" value="D" /> Both <br>
+              <input type="radio" id="q4-1" name="q4" value="-1" />Confusing/Cannot be decided<br>
+              <br>
+
+            <p><input type='submit' id='submitButton' value='Submit' /></p>
+          </form>
+          <script language='Javascript'>turkSetAssignmentID();</script>
+        </body>
+      </html>
+    ]]>
+  </HTMLContent>
+  <FrameHeight>450</FrameHeight>
+</HTMLQuestion>
