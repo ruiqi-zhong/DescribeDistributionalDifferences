@@ -8,7 +8,7 @@ import random
 from models.preprocess import construct_blocks, prefix_subspan
 from transformers import AutoTokenizer
 import openai
-from gadgets.util import gpt3wrapper, convert_cmp_hs
+from gadgets.util import gpt3wrapper, convert_cmp_hs, classify_cmp
 import tqdm
 import json
 from collections import defaultdict
@@ -98,9 +98,6 @@ for top_p, output_path in top_p2output_paths.items():
             'n': 1
         }
         query_count += 1
-        print(prompt)
-        input()
-        continue
 
         result = gpt3wrapper(
             tag='proposer',
@@ -141,41 +138,38 @@ non_rep_hypotheses = non_rep_hypotheses[:K]
 
 all_data_for_eval = []
 hyp_id2hyp_dict = {}
-for i, l in enumerate(rep_hypotheses):
-    return_text = l['result']['choices'][0]['text']
+assert len(rep_hypotheses) == len(non_rep_hypotheses)
+for i, (rep_l, non_rep_l) in enumerate(zip(rep_hypotheses, non_rep_hypotheses)):
+    assert rep_l['application_id_in_all'] == non_rep_l['application_id_in_all']
+    return_text = rep_l['result']['choices'][0]['text']
     hyp_dicts = []
-    hyps = [h.replace('"', '').strip() for h in l['result']['choices'][0]['text'].split('\n\n')[0].split('\n-')]
+    hyps = [h.replace('"', '').strip() for h in rep_l['result']['choices'][0]['text'].split('\n\n')[0].split('\n-')]
+    hyps = [h for h in hyps if 'group b' not in h.lower() and 'group a' not in h.lower()][:10]
+    
     for j, h in enumerate(hyps):
-        hyp_dict = {'orig_text': h, 'rep': True, 'index': j, 'application_id_in_all': l['application_id_in_all']}
+        hyp_dict = {'orig_text': h, 'rep': True, 'index': j, 'application_id_in_all': rep_l['application_id_in_all'], 'is_comparison': classify_cmp(h)}
         hyp_dicts.append(hyp_dict)
     
-    l = non_rep_hypotheses[i]
-    return_text = l['result']['choices'][0]['text']
-    hyps = [h.replace('"', '').strip() for h in l['result']['choices'][0]['text'].split('\n\n')[0].split('\n-')]
+    return_text = non_rep_l['result']['choices'][0]['text']
+    hyps = [h.replace('"', '').strip() for h in non_rep_l['result']['choices'][0]['text'].split('\n\n')[0].split('\n-')]
+    hyps = [h for h in hyps if 'group b' not in h.lower() and 'group a' not in h.lower()][:10]
+
+    
     for j, h in enumerate(hyps):
-        hyp_dict = {'orig_text': h, 'rep': False, 'index': j, 'application_id_in_all': l['application_id_in_all']}
-        if 'group b' not in h.lower():
-            hyp_dicts.append(hyp_dict)
+        hyp_dict = {'orig_text': h, 'rep': False, 'index': j, 'application_id_in_all': non_rep_l['application_id_in_all'], 'is_comparison': classify_cmp(h)}
+        hyp_dicts.append(hyp_dict)
 
     for j, hyp_dict in enumerate(hyp_dicts):
         hyp_dict['hyp_id'] = random.randint(0, 1000000000)
         hyp_id2hyp_dict[hyp_dict['hyp_id']] = hyp_dict
     
     d = {
-        'meta_data': all_meta_data[l['application_id_in_all']],
-        'hyp_dicts': hyp_dicts
+        'meta_data': all_meta_data[rep_l['application_id_in_all']],
+        'hyp_dicts': hyp_dicts,
+        'rep_sent_subset': rep_l['sent_subset'],
+        'non_rep_sent_subset': non_rep_l['sent_subset']
     }
     all_data_for_eval.append(d)
 
-all_hs = [hyp_dict['orig_text'] for d in all_data_for_eval for hyp_dict in d['hyp_dicts']]
-new_hs, _, _ = convert_cmp_hs(all_hs)
-assert len(all_hs) == len(new_hs)
-old_hs2new_hs = {old_h: new_h for old_h, new_h in zip(all_hs, new_hs)}
-for d in all_data_for_eval:
-    for hyp_dict in d['hyp_dicts']:
-        if 'orig_text' in hyp_dict:
-            hyp_dict['processed_text'] = old_hs2new_hs[hyp_dict['orig_text']]
-
-pkl.dump(old_hs2new_hs, open('experiments/data/soundness_old_hs2new_hs.pkl', 'wb'))
 pkl.dump(all_data_for_eval, open('experiments/data/soundness_all_hyps_for_internal_eval.pkl', 'wb'))
 pkl.dump(hyp_id2hyp_dict, open('experiments/data/soundness_hyp_id2hyp_dict.pkl', 'wb'))

@@ -8,7 +8,7 @@ import random
 from models.preprocess import construct_blocks, prefix_subspan
 from transformers import AutoTokenizer
 import openai
-from gadgets.util import gpt3wrapper, convert_cmp_hs
+from gadgets.util import gpt3wrapper, convert_cmp_hs, classify_cmp
 import tqdm
 import json
 from collections import defaultdict
@@ -26,10 +26,10 @@ proposer_templates = {
     'w-context': open('models/templates/1217proposer_template_w_context.txt').read(),
     'wo-context': open('models/templates/1217proposer_template_wo_context.txt').read()
 }
-MAX_PROMPT_LENGTH = 3500
+MAX_PROMPT_LENGTH = 3200
 query_count = 0
 K = 100
-
+application_id2sent_subset = {}
 for name, template in proposer_templates.items():
     output_path = 'experiments/data/insightful_hypotheses_%s.pkl' % name
     logs = []
@@ -43,42 +43,51 @@ for name, template in proposer_templates.items():
         generation = application['generation']
         positive_description = application['pos_desc']
         negative_description = application['neg_desc']
-        pos_samples, neg_samples = application['pos_samples'], application['neg_samples']
-        if len(pos_samples) > K:
-            pos_samples = random.sample(pos_samples, K)
-        if len(neg_samples) > K:
-            neg_samples = random.sample(neg_samples, K)
-
-        A_sentences = [prefix_subspan(x, SINGLE_SAMPLE_MAX_LENGTH, tok) for x in pos_samples]
-        B_sentences = [prefix_subspan(x, SINGLE_SAMPLE_MAX_LENGTH, tok) for x in neg_samples]
+        
         target = application['target']
         user = application['user']
 
         num_incontext_samples = 25
         prompt = None
-        while num_incontext_samples > 1:
-            sent_subset = construct_blocks(A_sentences, B_sentences, num_incontext_samples=num_incontext_samples)
-            
-            A_block, B_block = sent_subset['A_block'], sent_subset['B_block']
 
-            arg_dict = {
-                'dataset_description': dataset_description,
-                'generation': generation,
-                'positive_description': positive_description,
-                'negative_description': negative_description,
-                'user': user,
-                'target': target,
-                'A_block': A_block,
-                'B_block': B_block
-            }
-            prompt = template.format(**arg_dict)
+        arg_dict = {
+            'dataset_description': dataset_description,
+            'generation': generation,
+            'positive_description': positive_description,
+            'negative_description': negative_description,
+            'user': user,
+            'target': target
+        }
 
-            prompt_length = len(tok.encode(prompt))
-            if prompt_length < MAX_PROMPT_LENGTH:
-                break
-            else:
-                num_incontext_samples -= 1
-                print('prompt too long, reducing num_incontext_samples to %d' % num_incontext_samples)
+        if application_id2sent_subset.get(application_id_in_all) is None:
+            while num_incontext_samples > 1:
+                pos_samples, neg_samples = application['pos_samples'], application['neg_samples']
+                if len(pos_samples) > K:
+                    pos_samples = random.sample(pos_samples, K)
+                if len(neg_samples) > K:
+                    neg_samples = random.sample(neg_samples, K)
+
+                A_sentences = [prefix_subspan(x, SINGLE_SAMPLE_MAX_LENGTH, tok) for x in pos_samples]
+                B_sentences = [prefix_subspan(x, SINGLE_SAMPLE_MAX_LENGTH, tok) for x in neg_samples]
+
+                sent_subset = construct_blocks(A_sentences, B_sentences, num_incontext_samples=num_incontext_samples)
+                
+                A_block, B_block = sent_subset['A_block'], sent_subset['B_block']
+                tmp_arg_dict = deepcopy(arg_dict)
+                tmp_arg_dict['A_block'] = A_block
+                tmp_arg_dict['B_block'] = B_block
+                prompt = template.format(**tmp_arg_dict)
+                prompt_length = len(tok.encode(prompt))
+                if prompt_length < MAX_PROMPT_LENGTH:
+                    break
+                else:
+                    num_incontext_samples -= 1
+                    print('prompt too long, reducing num_incontext_samples to %d' % num_incontext_samples)
+            application_id2sent_subset[application_id_in_all] = sent_subset
+
+        sent_subset = application_id2sent_subset[application_id_in_all]
+        arg_dict['A_block'] = sent_subset['A_block']
+        arg_dict['B_block'] = sent_subset['B_block']
 
         query_args = {
             'engine': engine_name,
@@ -134,15 +143,18 @@ for i, l in enumerate(insightful_hypotheses):
     return_text = l['result']['choices'][0]['text']
     hyp_dicts = []
     hyps = [h.replace('"', '').strip() for h in l['result']['choices'][0]['text'].split('\n\n')[0].split('\n-')]
+    hyps = [h for h in hyps if 'group b' not in h.lower() and 'group a' not in h.lower()]
     for j, h in enumerate(hyps):
-        hyp_dict = {'orig_text': h, 'w_context': True, 'index': j, 'application_id_in_all': l['application_id_in_all']}
+        hyp_dict = {'orig_text': h, 'w_context': True, 'index': j, 'application_id_in_all': l['application_id_in_all'], 'is_comparison': classify_cmp(h)}
         hyp_dicts.append(hyp_dict)
     
     l = non_insightful_hypotheses[i]
     return_text = l['result']['choices'][0]['text']
     hyps = [h.replace('"', '').strip() for h in l['result']['choices'][0]['text'].split('\n\n')[0].split('\n-')]
+    hyps = [h for h in hyps if 'group b' not in h.lower() and 'group a' not in h.lower()]
+    
     for j, h in enumerate(hyps):
-        hyp_dict = {'orig_text': h, 'w_context': False, 'index': j, 'application_id_in_all': l['application_id_in_all']}
+        hyp_dict = {'orig_text': h, 'w_context': False, 'index': j, 'application_id_in_all': l['application_id_in_all'], 'is_comparison': classify_cmp(h)}
         if 'group b' not in h.lower():
             hyp_dicts.append(hyp_dict)
 
@@ -152,20 +164,11 @@ for i, l in enumerate(insightful_hypotheses):
     
     d = {
         'meta_data': all_meta_data[l['application_id_in_all']],
-        'hyp_dicts': hyp_dicts
+        'hyp_dicts': hyp_dicts,
+        'sent_subset': l['sent_subset']
     }
     all_data_for_eval.append(d)
 
-all_hs = [hyp_dict['orig_text'] for d in all_data_for_eval for hyp_dict in d['hyp_dicts']]
-new_hs, _, _ = convert_cmp_hs(all_hs)
-assert len(all_hs) == len(new_hs)
-old_hs2new_hs = {old_h: new_h for old_h, new_h in zip(all_hs, new_hs)}
-for d in all_data_for_eval:
-    for hyp_dict in d['hyp_dicts']:
-        if 'orig_text' in hyp_dict:
-            hyp_dict['processed_text'] = old_hs2new_hs[hyp_dict['orig_text']]
-
-pkl.dump(old_hs2new_hs, open('experiments/data/insightful_old_hs2new_hs.pkl', 'wb'))
 pkl.dump(all_data_for_eval, open('experiments/data/all_hyps_for_internal_eval.pkl', 'wb'))
 pkl.dump(hyp_id2hyp_dict, open('experiments/data/hyp_id2hyp_dict.pkl', 'wb'))
 

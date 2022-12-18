@@ -6,6 +6,7 @@ from transformers import GPT2Tokenizer
 from tqdm import tqdm
 import random
 import json
+import nltk
 
 tok = GPT2Tokenizer.from_pretrained('gpt2')
 
@@ -46,7 +47,8 @@ def gpt3wrapper(max_repeat=20, tag="no-tag", **arguments):
             raise KeyboardInterrupt
         except Exception as e:
             print(e)
-            time.sleep(1)
+            print('now sleeping')
+            time.sleep(30)
             i += 1
     return None
 
@@ -145,8 +147,15 @@ def convert_cmp_hs(hyps):
     
     return new_hyps, [sus(h) for h in new_hyps], success
 
-classify_cmp_template = open('models/templates/classify_comparison.txt').read()
+
 def classify_cmp(i):
+    my_text = nltk.word_tokenize(i)
+    pos_tags = nltk.pos_tag(my_text)
+    all_tags = {t[1] for t in pos_tags}
+    return any(tag in ('JJR', 'RBR') for tag in all_tags)
+
+classify_cmp_template = open('models/templates/classify_comparison.txt').read()
+def classify_cmp_(i):
     prompt = classify_cmp_template.format(input=i)
     response = gpt3wrapper(prompt=prompt, max_tokens=5, temperature=0.0, top_p=1, frequency_penalty=0.0, presence_penalty=0.0, engine='text-davinci-002', tag='classify_cmp')
     if response is None:
