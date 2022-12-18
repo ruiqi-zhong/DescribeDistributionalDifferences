@@ -1,0 +1,21 @@
+Check whether the TEXT satisfies a PROPERTY. Respond with Yes or No. When uncertain, output No. 
+
+Example 1:
+PROPERTY: is positive.
+TEXT: love this movie.
+Answer: Yes
+
+Example 2:
+PROPERTY: related to sports.
+TEXT: This song is great.
+Answer: No
+
+Example 3:
+PROPERTY: Woof!
+TEXT: Makima!
+Answer: No
+
+It's your turn now.
+PROPERTY: {hypothesis}
+TEXT: {text}
+Answer:
