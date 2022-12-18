@@ -1,0 +1,7 @@
+Check TEXT_A or TEXT_B satisfy the PROPERTY more. Output A, B, or Unsure.
+
+Example:
+PROPERTY: {hypothesis}
+TEXT_A: {text_A}
+TEXT_B: {text_B}
+Answer:
