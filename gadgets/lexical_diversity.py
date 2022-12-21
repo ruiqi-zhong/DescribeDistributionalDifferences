@@ -35,9 +35,12 @@ def get_word_sent_of_sent(sent: str) -> Set[str]:
 # B is a sorted list of sentences for D_2, with more representative sentences at the beginning
 # top_p is the fraction of sentences we want to focus on, but if we run out of sentences, we will use the rest of the sentences
 # num_sentences is the number of sentences we want to return for each group
-def lexical_diversity(sorted_A: List[str], sorted_B: List[str], top_p: float = 0.2, num_sentences: int = 4):
+def lexical_diversity(sorted_A: List[str], sorted_B: List[str], top_p: float = 0.2, num_sentences: int = 4, max_gap=None):
     a_candidates = [] 
-    b_candidates = [] 
+    b_candidates = []
+
+    if max_gap is None:
+        max_gap = (num_sentences // 4 + 1)
 
     reordered_A = re_order(sorted_A, top_p)
     reordered_B = re_order(sorted_B, top_p)
@@ -64,7 +67,7 @@ def lexical_diversity(sorted_A: List[str], sorted_B: List[str], top_p: float = 0
             # decide whether to add the sentence
             add_A_flg = True
             for word in word_set_A:
-                if a_words_count[word] - b_words_count[word] >= 2:
+                if a_words_count[word] - b_words_count[word] >= max_gap:
                     add_A_flg = False
                     break
 
@@ -83,7 +86,7 @@ def lexical_diversity(sorted_A: List[str], sorted_B: List[str], top_p: float = 0
 
             add_B_flg = True
             for word in word_set_B:
-                if b_words_count[word] - a_words_count[word] >= 2:
+                if b_words_count[word] - a_words_count[word] >= max_gap:
                     add_B_flg = False
 
             if add_B_flg:
@@ -91,5 +94,4 @@ def lexical_diversity(sorted_A: List[str], sorted_B: List[str], top_p: float = 0
                 for word in word_set_B:
                     b_words_count[word] += 1
                 break
-  
     return a_candidates, b_candidates

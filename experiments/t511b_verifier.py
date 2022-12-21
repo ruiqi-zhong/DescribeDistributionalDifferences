@@ -4,6 +4,7 @@ import torch
 from tqdm import trange
 from collections import OrderedDict
 from transformers import T5ForConditionalGeneration, T5Tokenizer
+from gadgets.util import parallelize_across_device
 
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
@@ -75,10 +76,10 @@ def sample_batched(
 
 class Verifier:
 
-    def __init__(self):
-        size = 'xxl'
+    def __init__(self, size='xxl'):
         self.tokenizer = T5Tokenizer.from_pretrained("google/flan-t5-%s" % size)
-        self.model = T5ForConditionalGeneration.from_pretrained("google/flan-t5-%s" % size, device_map="auto")
+        self.model = T5ForConditionalGeneration.from_pretrained("google/flan-t5-%s" % size)
+        parallelize_across_device(self.model)
         self.model_tokenizer = (self.model, self.tokenizer)
         self.ind_verifier_template = open('models/templates/t5_ind_verifier.txt', 'r').read()
         self.cmp_verifier_template = open('models/templates/t5_cmp_verifier.txt', 'r').read()
@@ -98,7 +99,7 @@ class Verifier:
         next_return_idx, next_finish_threshold = 0, 1 if input_dicts[0]['type'] == 'ind' else 2
         for start_idx in range(0, len(all_prompts), BLOCK_SIZE):
             prompts = all_prompts[start_idx: start_idx + BLOCK_SIZE]
-            completions, scores = sample_batched(self.model_tokenizer, prompts)
+            completions, scores = sample_batched(self.model_tokenizer, prompts, verbose=False)
             all_completions.extend(completions)
 
             while next_finish_threshold <= len(all_completions):

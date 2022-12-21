@@ -109,14 +109,14 @@ class Engine:
         self.model_tokenizer = model_tokenizer
         self.prompt2result = {}
     
-    def propose_hypotheses(self, ds, verbose=False):
+    def propose_hypotheses(self, ds, bsize=4, verbose=False):
         prompts = [construct_proposer_prompt(d['pos_sents'], d['neg_sents']) for d in ds]
         if debug_prompt:
             print('example proposer hypothesis prompt')
             print(prompts[0])
         if verbose:
             print('proposing hypotheses')
-        return [d['lm_postprocess'] for d in sample_batched(self.model_tokenizer, prompts, verbose=verbose)]
+        return [d['lm_postprocess'] for d in sample_batched(self.model_tokenizer, prompts, bsize=bsize, verbose=verbose)]
     
     def verify_w_examples(self, ds):
         prompts = [construct_verifier_w_examples_prompt(d['positive_sample'], d['negative_sample'], d['hypothesis'], d['target_sample']) for d in ds]
@@ -135,7 +135,7 @@ class Engine:
 
     def sample_batched(
         self, prompts, temperature=0.8, n=1, bsize=8, 
-        max_source_length=1024, max_target_length=512, save_score_tok_idx=None, verbose=False, stop_strs=None):
+        max_source_length=1024, max_target_length=60, save_score_tok_idx=None, verbose=False, stop_strs=None):
 
         uncomputed_prompts = list({prompt for prompt in prompts if prompt not in self.prompt2result})
         new_result = sample_batched(
