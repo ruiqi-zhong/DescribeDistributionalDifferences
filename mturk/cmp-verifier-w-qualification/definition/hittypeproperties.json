@@ -1,13 +1,13 @@
 {
-  "AutoApprovalDelayInSeconds": 300,
-  "AssignmentDurationInSeconds": 600,
-  "Reward": "0.2",
-  "Title": "Which text satisifes the property more? (occasionally contain offensive content)",
+  "AutoApprovalDelayInSeconds": 3600,
+  "AssignmentDurationInSeconds": 3600,
+  "Reward": "REWARD_VAR",
+  "Title": "Which text satisifes the property more? (occasionally contain offensive content) HASH_VAR",
   "Keywords": "Rating",
   "Description": "Check which text satisfies a property more.",
   "QualificationRequirements": [
     {
-      "QualificationTypeId": "37U405KO6B69E6N7Q04ULQW7AMEG3H",
+      "QualificationTypeId": "QUALIFICATION_ID_VAR",
       "Comparator": "GreaterThanOrEqualTo",
       "IntegerValues": [
         90

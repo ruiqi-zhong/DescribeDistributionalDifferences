@@ -1,13 +1,13 @@
 {
-  "AutoApprovalDelayInSeconds": 300,
-  "AssignmentDurationInSeconds": 600,
-  "Reward": "0.20",
-  "Title": "Verify whether a property holds for a text. (occasionally contain offensive content)",
+  "AutoApprovalDelayInSeconds": 3600,
+  "AssignmentDurationInSeconds": 3600,
+  "Reward": "REWARD_VAR",
+  "Title": "Verify whether a property holds for a text. (occasionally contain offensive content) HASH_VAR",
   "Keywords": "Rating",
   "Description": "Verify whether a property holds for a text.",
   "QualificationRequirements": [
     {
-      "QualificationTypeId": "3LRUXMYH0QQ5EE4G8UKFAZ5S0VJ291",
+      "QualificationTypeId": "QUALIFICATION_ID_VAR",
       "Comparator": "GreaterThanOrEqualTo",
       "IntegerValues": [
         90
