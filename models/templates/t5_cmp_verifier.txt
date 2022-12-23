@@ -1,0 +1,25 @@
+Check whether TEXT_A satisfies the PROPERTY more than TEXT_B. Respond with Yes or No. When uncertain, output No. 
+
+Positive Example 1 -
+Input: PROPERTY: Is it true that TEXT_A is longer compared to TEXT_B?
+TEXT_A: love this
+TEXT_B: I am very honored to be invited to watch this movie, which is absolutely fantastic.
+output: No
+
+Positive Example 2 -
+Input: PROPERTY: Is it true that TEXT_A is related to sports compared to TEXT_B?
+TEXT_A: I love basketball.
+TEXT_B: This song is great.
+output: Yes
+
+Positive Example 3 -
+Input: PROPERTY: Is it true that TEXT_A Woof! compared to TEXT_B?
+TEXT_A: Makima!
+TEXT_B: Ah!
+output: Unsure
+
+Now complete the following example -
+input: PPROPERTY: Is it true that TEXT_A {hypothesis} compared to TEXT_B?
+TEXT_A: {text_A}
+TEXT_B: {text_B}
+Answer:
