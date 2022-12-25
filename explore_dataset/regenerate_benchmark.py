@@ -41,6 +41,8 @@ for config, full_application_dicts in config2full_application_dict.items():
 for full_application_dict in individual_full_application_dicts:
     if 'benchmark_insightfulness' not in full_application_dict:
         full_application_dict['benchmark_insightfulness'] = False
+    if 'benchmark' not in full_application_dict:
+        full_application_dict['benchmark'] = False
 
 print(len([x for x in individual_full_application_dicts if x['benchmark_insightfulness']]))
 pkl.dump(individual_full_application_dicts, open('benchmark_applications_1stdraft.pkl', 'wb'))
