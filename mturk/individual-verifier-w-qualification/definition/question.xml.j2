@@ -9,54 +9,54 @@
         </head>
 
         <body>
-          <p>You need to check whether the <b>TEXT</b> satisfies the <b>PROPERTY</b>. Choose 5 if you are certain that the property is satisfied and 1 if you are certain that it is not satisifed.  Thanks! </p>
+          <p>You need to check whether the <b>TEXT</b> satisfies the <b>PROPERTY</b>. Choose 5 if you are certain that the property is satisfied and 1 if you are certain that it is not satisifed. You can revisit the instructions at this link: https://github.com/ruiqi-zhong/DescribeDistributionalDifferences/blob/ruiqi-dev/instructions/instructions.md . Thanks! </p>
           <form name='mturk_form' method='post' id='mturk_form' action='/mturk/externalSubmit'>
             <input type='hidden' value='' name='assignmentId' id='assignmentId'/>
               <br>
               <p style="color:red;">PROPERTY: <b>{{ hypothesis }}</b>.</p>
               <p>TEXT: <b>{{ text_0 }}</b>.</p>
-              <input type="radio" id="q05" name="q0" value="5" />5 Certainly Yes<br>
-              <input type="radio" id="q04" name="q0" value="4" />4 Likely Yes<br>
-              <input type="radio" id="q03" name="q0" value="3" />3 Neutral<br>
-              <input type="radio" id="q02" name="q0" value="2" />2 Likely No<br>
-              <input type="radio" id="q01" name="q0" value="1" />1 Certainly No<br>
-              <input type="radio" id="q0-1" name="q0" value="-1" />Confusing/Cannot be decided<br>
+              <input type="radio" id="q05" name="q0" value="5" />A Certainly Yes<br>
+              <input type="radio" id="q04" name="q0" value="4" />B Likely Yes<br>
+              <input type="radio" id="q03" name="q0" value="3" />C Neutral<br>
+              <input type="radio" id="q02" name="q0" value="2" />D Likely No<br>
+              <input type="radio" id="q01" name="q0" value="1" />E Certainly No<br>
+              <input type="radio" id="q0-1" name="q0" value="-1" />F Confusing/Cannot be decided<br>
               <br>
               <p style="color:red;">PROPERTY: <b>{{ hypothesis }}</b>.</p>
               <p>TEXT: <b>{{ text_1 }}</b>.</p>
-              <input type="radio" id="q15" name="q1" value="5" />5 Certainly Yes<br>
-              <input type="radio" id="q14" name="q1" value="4" />4 Likely Yes<br>
-              <input type="radio" id="q13" name="q1" value="3" />3 Neutral<br>
-              <input type="radio" id="q12" name="q1" value="2" />2 Likely No<br>
-              <input type="radio" id="q11" name="q1" value="1" />1 Certainly No<br>
-              <input type="radio" id="q1-1" name="q1" value="-1" />Confusing/Cannot be decided<br>
+              <input type="radio" id="q15" name="q1" value="5" />A Certainly Yes<br>
+              <input type="radio" id="q14" name="q1" value="4" />B Likely Yes<br>
+              <input type="radio" id="q13" name="q1" value="3" />C Neutral<br>
+              <input type="radio" id="q12" name="q1" value="2" />D Likely No<br>
+              <input type="radio" id="q11" name="q1" value="1" />D Certainly No<br>
+              <input type="radio" id="q1-1" name="q1" value="-1" />F Confusing/Cannot be decided<br>
               <br>
               <p style="color:red;">PROPERTY: <b>{{ hypothesis }}</b>.</p>
               <p>TEXT: <b>{{ text_2 }}</b>.</p>
-              <input type="radio" id="q25" name="q2" value="5" />5 Certainly Yes<br>
-              <input type="radio" id="q24" name="q2" value="4" />4 Likely Yes<br>
-              <input type="radio" id="q23" name="q2" value="3" />3 Neutral<br>
-              <input type="radio" id="q22" name="q2" value="2" />2 Likely No<br>
-              <input type="radio" id="q21" name="q2" value="1" />1 Certainly No<br>
-              <input type="radio" id="q2-1" name="q2" value="-1" />Confusing/Cannot be decided<br>
+              <input type="radio" id="q25" name="q2" value="5" />A Certainly Yes<br>
+              <input type="radio" id="q24" name="q2" value="4" />B Likely Yes<br>
+              <input type="radio" id="q23" name="q2" value="3" />C Neutral<br>
+              <input type="radio" id="q22" name="q2" value="2" />D Likely No<br>
+              <input type="radio" id="q21" name="q2" value="1" />E Certainly No<br>
+              <input type="radio" id="q2-1" name="q2" value="-1" />F Confusing/Cannot be decided<br>
               <br>
               <p style="color:red;">PROPERTY: <b>{{ hypothesis }}</b>.</p>
               <p>TEXT: <b>{{ text_3 }}</b>.</p>
-              <input type="radio" id="q35" name="q3" value="5" />5 Certainly Yes<br>
-              <input type="radio" id="q34" name="q3" value="4" />4 Likely Yes<br>
-              <input type="radio" id="q33" name="q3" value="3" />3 Neutral<br>
-              <input type="radio" id="q32" name="q3" value="2" />2 Likely No<br>
-              <input type="radio" id="q31" name="q3" value="1" />1 Certainly No<br>
-              <input type="radio" id="q3-1" name="q3" value="-1" />Confusing/Cannot be decided<br>
+              <input type="radio" id="q35" name="q3" value="5" />A Certainly Yes<br>
+              <input type="radio" id="q34" name="q3" value="4" />B Likely Yes<br>
+              <input type="radio" id="q33" name="q3" value="3" />C Neutral<br>
+              <input type="radio" id="q32" name="q3" value="2" />D Likely No<br>
+              <input type="radio" id="q31" name="q3" value="1" />E Certainly No<br>
+              <input type="radio" id="q3-1" name="q3" value="-1" />F Confusing/Cannot be decided<br>
               <br>
               <p style="color:red;">PROPERTY: <b>{{ hypothesis }}</b>.</p>
               <p>TEXT: <b>{{ text_4 }}</b>.</p>
-              <input type="radio" id="q45" name="q4" value="5" />5 Certainly Yes<br>
-              <input type="radio" id="q44" name="q4" value="4" />4 Likely Yes<br>
-              <input type="radio" id="q43" name="q4" value="3" />3 Neutral<br>
-              <input type="radio" id="q42" name="q4" value="2" />2 Likely No<br>
-              <input type="radio" id="q41" name="q4" value="1" />1 Certainly No<br>
-              <input type="radio" id="q4-1" name="q4" value="-1" />Confusing/Cannot be decided<br>
+              <input type="radio" id="q45" name="q4" value="5" />A Certainly Yes<br>
+              <input type="radio" id="q44" name="q4" value="4" />B Likely Yes<br>
+              <input type="radio" id="q43" name="q4" value="3" />C Neutral<br>
+              <input type="radio" id="q42" name="q4" value="2" />D Likely No<br>
+              <input type="radio" id="q41" name="q4" value="1" />E Certainly No<br>
+              <input type="radio" id="q4-1" name="q4" value="-1" />F Confusing/Cannot be decided<br>
 
             <p><input type='submit' id='submitButton' value='Submit' /></p>
           </form>
