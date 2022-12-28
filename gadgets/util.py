@@ -163,3 +163,16 @@ def classify_cmp_(i):
     raw_text = response['choices'][0]['text'].strip()
     return 'yes' in raw_text.lower()
 
+rm_cmp_prompt = open('models/templates/1223rm_cmp_prompt.txt').read()
+def convert_cmp_to_ind(s):
+    for _ in range(3):
+        if not classify_cmp(s):
+            break
+        prompt = rm_cmp_prompt.format(input=s)
+        response = gpt3wrapper(prompt=prompt, max_tokens=2048, temperature=0.0, top_p=1, frequency_penalty=0.0, presence_penalty=0.0, stop=['\n\n'], engine='text-davinci-002', tag='convert_cmp_to_ind')
+        if response is None:
+            return s
+        s = response['choices'][0]['text'].strip()
+    if classify_cmp(s) or 'group a' in s.lower() or 'group b' in s.lower():
+        return None
+    return s
