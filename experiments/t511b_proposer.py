@@ -9,8 +9,8 @@ from gadgets.util import parallelize_across_device
 
 class T5Proposer:
 
-    def __init__(self, model_size, model_path=None):
-        self.tokenizer = T5Tokenizer.from_pretrained("google/flan-t5-%s" % model_size)
+    def __init__(self, model_size=None, model_path=None):
+        self.tokenizer = T5Tokenizer.from_pretrained("google/flan-t5-xxl")
         self.tokenizer.model_max_length = 1024
         if model_path is None:
             self.model = T5ForConditionalGeneration.from_pretrained("google/flan-t5-%s" % model_size)

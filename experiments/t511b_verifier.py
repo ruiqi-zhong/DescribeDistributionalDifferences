@@ -4,11 +4,14 @@ import torch
 from tqdm import trange
 from collections import OrderedDict
 from transformers import T5ForConditionalGeneration, T5Tokenizer
+import sys
+sys.path.append('./')
 from gadgets.util import parallelize_across_device
 
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 BLOCK_SIZE = 32
+sm = torch.nn.Softmax(dim=-1)
 
 def truncate_string(s, stop_strs):
     for stop_str in stop_strs:
@@ -70,15 +73,20 @@ def sample_batched(
             )
 
             all_completions.extend(decoded_strs)
-            all_first_scores.extend(generation_result.scores[0].detach().cpu().numpy().tolist())
+            all_first_scores.extend(sm(generation_result.scores[0][:,save_score_tok_idx])[:,1].detach().cpu().numpy().tolist())
     return all_completions, all_first_scores
 
 
 class Verifier:
 
-    def __init__(self, size='xxl'):
-        self.tokenizer = T5Tokenizer.from_pretrained("google/flan-t5-%s" % size)
-        self.model = T5ForConditionalGeneration.from_pretrained("google/flan-t5-%s" % size)
+    def __init__(self, size='xxl', model_path=None):
+        self.tokenizer = T5Tokenizer.from_pretrained("google/flan-t5-xxl")
+        print('loading model weights')
+        if model_path is not None:
+            self.model = T5ForConditionalGeneration.from_pretrained(model_path)
+        else:
+            self.model = T5ForConditionalGeneration.from_pretrained("google/flan-t5-%s" % size)
+        print('done')
         parallelize_across_device(self.model)
         self.model_tokenizer = (self.model, self.tokenizer)
         self.ind_verifier_template = open('models/templates/t5_ind_verifier.txt', 'r').read()
@@ -117,13 +125,39 @@ class Verifier:
                 if next_return_idx == len(input_dicts):
                     return
                 next_finish_threshold += 1 if input_dicts[next_return_idx]['type'] == 'ind' else 2
+    
+    def verify_ind_dicts_w_scores(self, input_dicts):
+        all_prompts = []
+        for i, input_dict in enumerate(input_dicts):
+            hypothesis, text = input_dict['hypothesis'], input_dict['text']
+            all_prompts.append(self.ind_verifier_template.format(hypothesis=hypothesis, text=text))
+        
+        all_completions = []
+        all_scores = []
+        next_return_idx = 0
+        for start_idx in range(0, len(all_prompts), BLOCK_SIZE):
+            prompts = all_prompts[start_idx: start_idx + BLOCK_SIZE]
+            completions, scores = sample_batched(self.model_tokenizer, prompts, verbose=False)
+            for s in scores:
+                yield s
+
+
+
 
 if __name__ == '__main__':
-    input_dicts = [
-        {'type': 'ind', 'hypothesis': 'is a positive review', 'text': 'I like this movie.'},
-        {'type': 'cmp', 'hypothesis': 'is more positive', 'text_A': 'I like this movie.', 'text_B': 'I hate this movie.'}
+    # input_dicts = [
+    #     {'type': 'ind', 'hypothesis': 'is a positive review', 'text': 'I like this movie.'},
+    #     {'type': 'cmp', 'hypothesis': 'is more positive', 'text_A': 'I like this movie.', 'text_B': 'I hate this movie.'}
+    # ]
+    # input_dicts = input_dicts * 30
+    # verifier = Verifier(model_path='models/ckpts/best_verifier/')
+    # for result in verifier.verify_dicts(input_dicts):
+    #     print(result)
+    input_dicts = [ 
+        {'type': 'ind', 'hypothesis': 'is a positive review', 'text': 'I like this movie.'}, 
+        {'type': 'ind', 'hypothesis': 'is a positive review', 'text': 'I hate this movie.'}
     ]
-    input_dicts = input_dicts * 30
-    verifier = Verifier()
-    for result in verifier.verify_dicts(input_dicts):
-        print(result)
+    verifier = Verifier(model_path='models/ckpts/best_verifier/')
+    # verifier = Verifier(model_path='t5-small')
+    for s in verifier.verify_ind_dicts_w_scores(input_dicts):
+        print(s)
