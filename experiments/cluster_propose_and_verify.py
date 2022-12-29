@@ -12,9 +12,6 @@ from tqdm import tqdm, trange
 
 
 if __name__ == '__main__':
-    DEBUG = False
-    train_data_count = 2000 if not DEBUG else 5
-    test_data_count = 10000 if not DEBUG else 10
 
     parser = ArgumentParser()
 
@@ -23,8 +20,14 @@ if __name__ == '__main__':
     parser.add_argument('--seed', type=int, default=0)
     parser.add_argument('--no_eval', action='store_true')
     parser.add_argument('--no_propose', action='store_true')
+    parser.add_argument('--debug', action='store_true')
 
     args = parser.parse_args()
+
+    DEBUG = args.debug
+    train_data_count = 2000 if not DEBUG else 5
+    test_data_count = 10000 if not DEBUG else 10
+
     if args.proposer_model_path is None:
         args.proposer_model_path = 'google/flan-t5-xxl'
     if args.verifier_model_paths is None:
