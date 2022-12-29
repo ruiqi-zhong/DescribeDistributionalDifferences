@@ -10,8 +10,6 @@ import nltk
 
 tok = GPT2Tokenizer.from_pretrained('gpt2')
 
-openai.api_key = os.environ['openai_key']
-
 query_logs_dir = 'querylogs/'
 
 def parallelize_across_device(model):
@@ -33,6 +31,7 @@ def parallelize_across_device(model):
 
 
 def gpt3wrapper(max_repeat=20, tag="no-tag", **arguments):
+    openai.api_key = os.environ['openai_key']
     i = 0
     while i < max_repeat:
         try:
