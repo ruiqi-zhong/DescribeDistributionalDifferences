@@ -80,10 +80,19 @@ def sample_batched(
 class Verifier:
 
     def __init__(self, size='xxl', model_path=None):
-        self.tokenizer = T5Tokenizer.from_pretrained("google/flan-t5-xxl")
+        try:
+            self.tokenizer = T5Tokenizer.from_pretrained("google/flan-t5-xxl")
+        except Exception as e:
+            print(e)
+            self.tokenizer = T5Tokenizer.from_pretrained("../workflow/mount/models/t5tok/")
+
         print('loading model weights')
         if model_path is not None:
-            self.model = T5ForConditionalGeneration.from_pretrained(model_path)
+            try:
+                self.model = T5ForConditionalGeneration.from_pretrained("google/flan-t5-%s" % model_size)
+            except Exception as e:
+                print(e)
+                self.model = T5ForConditionalGeneration.from_pretrained("../workflow/mount/models/flan-t5-xxl")
         else:
             self.model = T5ForConditionalGeneration.from_pretrained("google/flan-t5-%s" % size)
         print('done')
