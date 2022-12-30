@@ -88,13 +88,14 @@ class Verifier:
 
         print('loading model weights')
         if model_path is not None:
+            self.model = T5ForConditionalGeneration.from_pretrained(model_path)
+        else:
             try:
-                self.model = T5ForConditionalGeneration.from_pretrained("google/flan-t5-%s" % model_size)
+                self.model = T5ForConditionalGeneration.from_pretrained("google/flan-t5-%s" % size)
             except Exception as e:
                 print(e)
                 self.model = T5ForConditionalGeneration.from_pretrained("../workflow/mount/models/flan-t5-xxl")
-        else:
-            self.model = T5ForConditionalGeneration.from_pretrained("google/flan-t5-%s" % size)
+            
         print('done')
         parallelize_across_device(self.model)
         self.model_tokenizer = (self.model, self.tokenizer)
