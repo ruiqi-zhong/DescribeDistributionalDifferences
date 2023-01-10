@@ -12,77 +12,116 @@ from tqdm import tqdm, trange
 
 
 if __name__ == '__main__':
-    data_count = 2000
 
     parser = ArgumentParser()
 
-    parser.add_argument('--model_path', type=str, default=None)
+    parser.add_argument('--proposer_model_path', type=str, default=None)
+    parser.add_argument('--verifier_model_paths', type=str, default=None)
     parser.add_argument('--seed', type=int, default=0)
+    parser.add_argument('--no_eval', action='store_true')
+    parser.add_argument('--no_propose', action='store_true')
+    parser.add_argument('--debug', action='store_true')
 
     args = parser.parse_args()
+
+    DEBUG = args.debug
+    train_data_count = 2000 if not DEBUG else 5
+    test_data_count = 10000 if not DEBUG else 10
+
+    if args.proposer_model_path is None:
+        args.proposer_model_path = 'google/flan-t5-xxl'
+    if args.verifier_model_paths is None:
+        args.verifier_model_paths = 'models/ckpts/best_verifier'
+
+    proposer_model_path = args.proposer_model_path
+    verifier_model_paths = args.verifier_model_paths.split(',')
+    
+    if args.proposer_model_path[-1] == '/':
+        args.proposer_model_path = args.proposer_model_path[:-1]
+    for i in range(len(verifier_model_paths)):
+        if verifier_model_paths[i][-1] == '/':
+            verifier_model_paths[i] = verifier_model_paths[i][:-1]
+
+    proposer_model_name = os.path.basename(str(proposer_model_path))
+    
     random.seed(args.seed)
 
-    size = 'xxl'
+    data_name2dicts = {
+        'train': json.load(open('experiments/clusters/train_data.json', 'r')),
+        'test': json.load(open('experiments/clusters/test_data.json', 'r'))[:test_data_count]
+    }
 
-    iteration = 0
-    save_path = 'experiments/clusters/verify_%s_%d.jsonl' % ((os.path.basename(str(args.model_path)), args.seed))
-    while True:
-        print('Iteration %d' % iteration)
-        train_data = json.load(open('experiments/clusters/train_data.json', 'r'))
-        random_order = list(range(len(train_data)))
-        random.shuffle(random_order)
-        if args.model_path is None:
-            proposer = T5Proposer(size)
-        else:
-            proposer = T5Proposer(args.model_path)
-        
+    save_path_template = 'experiments/clusters/propose_and_verify_{proposer_model_name}_{verifier_model_name}_{seed}_{split}.jsonl'
+
+    def get_verifier_logs(split_name, idxes=None, tag=''):
+        if idxes is None:
+            idxes = list(range(len(data_name2dicts[split_name])))
+        data_dicts = data_name2dicts[split_name]
+        pbar = tqdm(idxes)
+
         saved_proposer_outputs = []
-        pbar = tqdm(random_order[:data_count])
+        proposer = T5Proposer(model_path=args.proposer_model_path)
         for i in pbar:
-            pbar.set_description('proposer, iteration %d' % (iteration))
-            d = train_data[i]
-            input_dicts = [d] * 4
+            pbar.set_description('proposer, tag %s' % (tag))
+            d = data_dicts[i]
+            input_dicts = [d] * 8
             hypotheses = proposer.propose(input_dicts)
             save_d = {'train_id': i, 'hypotheses': hypotheses}
             saved_proposer_outputs.append(save_d)
         del proposer
-        verifier = Verifier(size)
 
-        with open(save_path, 'a') as f:
-            pbar = trange(len(saved_proposer_outputs))
-            for i in pbar:
-                pbar.set_description('verifier, iteration %d' % (iteration))
-                d =  saved_proposer_outputs[i]
-                train_id, hypotheses = d['train_id'], d['hypotheses']
-                pos_sents, neg_sents = train_data[train_id]['pos_sents'], train_data[train_id]['neg_sents']
+        for verifier_model_path in verifier_model_paths:
+            print('loading verifier from %s' % verifier_model_path)
+            verifier = Verifier(model_path=verifier_model_path)
+            save_path = save_path_template.format(proposer_model_name=proposer_model_name, verifier_model_name=os.path.basename(verifier_model_path), seed=args.seed, split=split_name)
+            with open(save_path, 'a') as f:
+                pbar = trange(len(saved_proposer_outputs))
+                for i in pbar:
+                    pbar.set_description('verifier, tag %s' % (tag))
+                    d =  saved_proposer_outputs[i]
+                    train_id, hypotheses = d['train_id'], d['hypotheses']
+                    pos_sents, neg_sents = data_dicts[train_id]['pos_sents'], data_dicts[train_id]['neg_sents']
 
-                h2result = {}
-                for h in hypotheses:
-                    result = {}
-                    h_type = 'cmp' if classify_cmp(h) else 'ind'
-                    result['type'] = h_type
+                    h2result = {}
+                    for h in hypotheses:
+                        result = {}
+                        h_type = 'cmp' if classify_cmp(h) else 'ind'
+                        if h_type == 'cmp':
+                            continue
+                        result['type'] = h_type
 
-                    if h_type == 'cmp':
-                        dicts = []
-                        for pos_sent in pos_sents:
+                        if h_type == 'cmp':
+                            dicts = []
+                            for pos_sent in pos_sents:
+                                for neg_sent in neg_sents:
+                                    dicts.append({'text_A': pos_sent, 'text_B': neg_sent, 'hypothesis': h, 'type': 'cmp'})
+                            score = np.mean(np.array([x == 'A' for x in verifier.verify_dicts(dicts)]))
+                            result['score'] = score
+                        else:
+                            dicts = []
+                            for pos_sent in pos_sents:
+                                dicts.append({'text': pos_sent, 'hypothesis': h, 'type': 'ind'})
                             for neg_sent in neg_sents:
-                                dicts.append({'text_A': pos_sent, 'text_B': neg_sent, 'hypothesis': h, 'type': 'cmp'})
-                        score = np.mean(np.array([x == 'A' for x in verifier.verify_dicts(dicts)]))
-                        result['score'] = score
-                    else:
-                        dicts = []
-                        for pos_sent in pos_sents:
-                            dicts.append({'text': pos_sent, 'hypothesis': h, 'type': 'ind'})
-                        for neg_sent in neg_sents:
-                            dicts.append({'text': neg_sent, 'hypothesis': h, 'type': 'ind'})
-                        results = list(verifier.verify_dicts(dicts))
+                                dicts.append({'text': neg_sent, 'hypothesis': h, 'type': 'ind'})
+                            results = list(verifier.verify_dicts(dicts))
 
-                        frac_A = np.mean(np.array(results[:len(pos_sents)]))
-                        frac_B = np.mean(np.array(results[len(pos_sents):]))
-                        score = frac_A - frac_B
-                        result['score'] = score
-                    h2result[h] = result
+                            frac_A = np.mean(np.array(results[:len(pos_sents)]))
+                            frac_B = np.mean(np.array(results[len(pos_sents):]))
+                            score = frac_A - frac_B
+                            result['score'] = score
+                        h2result[h] = result
 
-                save_d = {'train_id': train_id, 'hypotheses': h2result}
-                f.write(json.dumps(save_d) + '\n')
-        iteration += 1
+                    save_d = {'train_id': train_id, 'hypotheses': h2result}
+                    f.write(json.dumps(save_d) + '\n')
+
+    if not args.no_eval:
+        get_verifier_logs('test', tag='test')
+    if not args.no_propose:
+        iteration = 0
+        while True:
+            print('Iteration %d' % iteration)
+            random_order = list(range(len(data_name2dicts['train'])))
+            random.shuffle(random_order)
+            idxes = random_order[:train_data_count]
+            get_verifier_logs('train', idxes=idxes, tag='train')
+            iteration += 1

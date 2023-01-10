@@ -10,8 +10,6 @@ import nltk
 
 tok = GPT2Tokenizer.from_pretrained('gpt2')
 
-openai.api_key = os.environ['openai_key']
-
 query_logs_dir = 'querylogs/'
 
 def parallelize_across_device(model):
@@ -33,6 +31,7 @@ def parallelize_across_device(model):
 
 
 def gpt3wrapper(max_repeat=20, tag="no-tag", **arguments):
+    openai.api_key = os.environ['openai_key']
     i = 0
     while i < max_repeat:
         try:
@@ -163,3 +162,16 @@ def classify_cmp_(i):
     raw_text = response['choices'][0]['text'].strip()
     return 'yes' in raw_text.lower()
 
+rm_cmp_prompt = open('models/templates/1223rm_cmp_prompt.txt').read()
+def convert_cmp_to_ind(s):
+    for _ in range(3):
+        if not classify_cmp(s):
+            break
+        prompt = rm_cmp_prompt.format(input=s)
+        response = gpt3wrapper(prompt=prompt, max_tokens=2048, temperature=0.0, top_p=1, frequency_penalty=0.0, presence_penalty=0.0, stop=['\n\n'], engine='text-davinci-002', tag='convert_cmp_to_ind')
+        if response is None:
+            return s
+        s = response['choices'][0]['text'].strip()
+    if classify_cmp(s) or 'group a' in s.lower() or 'group b' in s.lower():
+        return None
+    return s
