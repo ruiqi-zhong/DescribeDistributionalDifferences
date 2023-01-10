@@ -1,6 +1,6 @@
 {
   "AutoApprovalDelayInSeconds": 3600,
-  "AssignmentDurationInSeconds": 3600,
+  "AssignmentDurationInSeconds": 600,
   "Reward": "REWARD_VAR",
   "Title": "Verify whether a property holds for a text. (occasionally contain offensive content) HASH_VAR",
   "Keywords": "Rating",
