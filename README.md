@@ -18,6 +18,5 @@ Due to time constraint, we did not make the code for the entire pipeline from ou
 
 ## If you want to try our system:
 
-```system_v05-14-22``` contains our system's latest implementation as of 05/14/2022. It is different from the one used in our paper, we have not rigorously evaluated it yet, and it might potentially be a weaker system. However, the new proposer is based on T5 instead of GPT-3, so you can access the model weights and run it locally.
+[**Our latest best system**](https://github.com/ruiqi-zhong/D5)
 
-If you have any questions or thoughts about future directions and other applications, feel free to email me at ruiqi-zhong@berkeley.edu! 
