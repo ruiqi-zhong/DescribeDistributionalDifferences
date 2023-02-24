@@ -1,5 +1,7 @@
 ## Code and data for the paper
 
+Our github repo for the latest SOTA system is at: https://github.com/ruiqi-zhong/D5
+
 [**Describing Differences between Text Distributions with Natural Language**](https://arxiv.org/abs/2201.12323), ICML 2022
 
 Ruiqi Zhong, Charlie Snell, Dan Klein, Jacob Steinhardt
